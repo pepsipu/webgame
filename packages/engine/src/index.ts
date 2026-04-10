@@ -1,7 +1,7 @@
 export { Document } from "./document";
 export { Engine } from "./engine";
 export { Element } from "./element";
-export { ElementRegistry } from "./element-registry";
+export { ElementRegistry, toCustomElementName } from "./element-registry";
 export { numberField, stringField } from "./field";
 export { selectElement, selectElements } from "./query";
 export type {

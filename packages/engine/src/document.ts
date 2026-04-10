@@ -6,14 +6,9 @@ export class Document extends Element {
   static readonly tag: string = "game";
   static readonly scriptMethods: readonly string[] = ["createElement"];
 
-  readonly #registry: ElementRegistry;
-
-  constructor(registry: ElementRegistry) {
-    super();
-    this.#registry = registry;
-  }
+  registry!: ElementRegistry;
 
   createElement(snapshot: ElementSnapshot): void {
-    this.append(this.#registry.create(snapshot));
+    this.append(this.registry.create(snapshot));
   }
 }

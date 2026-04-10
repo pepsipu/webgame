@@ -1,15 +1,17 @@
-import type { Server as HttpServer } from "node:http";
 import type { ElementRegistry } from "@webgames/engine";
 import { Element } from "@webgames/engine";
-import { WebSocket, WebSocketServer } from "ws";
 
-type ClientNetworkEvent = {
+type ServerNetworkEvent = {
   name: string;
   data: unknown;
+  clientId: string;
 };
 
-type ServerNetworkEvent = ClientNetworkEvent & {
+type RelayMessage = {
+  type: "event" | "connect" | "disconnect";
   clientId: string;
+  name?: string;
+  data?: unknown;
 };
 
 export class ServerNetworkServiceElement extends Element {
@@ -17,19 +19,13 @@ export class ServerNetworkServiceElement extends Element {
   static readonly replicated: boolean = false;
   static readonly scriptMethods: readonly string[] = ["pollEvent"];
 
-  clients: Set<WebSocket>;
-  readonly #incomingEvents: ServerNetworkEvent[];
-  #socketServer: WebSocketServer | null;
+  #destroyed: boolean = false;
+  #socket: WebSocket;
+  readonly #incomingEvents: ServerNetworkEvent[] = [];
 
   constructor() {
     super();
-    this.clients = new Set();
-    this.#incomingEvents = [];
-    this.#socketServer = null;
-  }
-
-  attach(server: HttpServer, registry: ElementRegistry, root: Element): void {
-    this.#socketServer = this.#createSocketServer(server, registry, root);
+    this.#socket = this.#connect();
   }
 
   pollEvent(): ServerNetworkEvent | undefined {
@@ -37,67 +33,46 @@ export class ServerNetworkServiceElement extends Element {
   }
 
   broadcastSnapshot(registry: ElementRegistry, root: Element): void {
-    const snapshot = JSON.stringify(registry.getSnapshot(root));
-
-    for (const socket of this.clients.values()) {
-      socket.send(snapshot);
+    if (this.#socket.readyState === WebSocket.OPEN) {
+      this.#socket.send(JSON.stringify(registry.getSnapshot(root)));
     }
   }
 
   destroy(): void {
-    for (const socket of this.clients) {
-      socket.close();
-    }
-
-    this.clients.clear();
-    this.#socketServer?.close();
-    this.#socketServer = null;
+    this.#destroyed = true;
+    this.#socket.close();
   }
 
-  #createSocketServer(
-    server: HttpServer,
-    registry: ElementRegistry,
-    root: Element,
-  ): WebSocketServer {
-    const socketServer = new WebSocketServer({
-      server,
-      path: "/ws",
-    });
+  #connect(): WebSocket {
+    const protocol = location.protocol === "https:" ? "wss:" : "ws:";
+    const socket = new WebSocket(
+      `${protocol}//${location.host}/ws?role=host`,
+    );
 
-    socketServer.on("connection", (socket) => {
-      this.#connectClient(registry, root, socket);
-    });
-
-    return socketServer;
-  }
-
-  #connectClient(
-    registry: ElementRegistry,
-    root: Element,
-    socket: WebSocket,
-  ): void {
-    const clientId = crypto.randomUUID();
-
-    this.clients.add(socket);
-    socket.send(JSON.stringify(registry.getSnapshot(root)));
-
-    socket.on("message", (data) => {
-      const event = JSON.parse(data.toString()) as ClientNetworkEvent;
+    socket.addEventListener("message", (event) => {
+      const message = JSON.parse(String(event.data)) as RelayMessage;
 
       this.#incomingEvents.push({
-        clientId,
-        name: event.name,
-        data: event.data,
+        clientId: message.clientId,
+        name: message.type === "event" ? message.name! : message.type,
+        data: message.type === "event" ? message.data : null,
       });
     });
 
-    socket.on("close", () => {
-      this.clients.delete(socket);
-      this.#incomingEvents.push({
-        clientId,
-        name: "disconnect",
-        data: null,
-      });
+    socket.addEventListener("close", () => {
+      if (this.#destroyed) {
+        return;
+      }
+
+      window.setTimeout(() => {
+        if (this.#destroyed) {
+          return;
+        }
+
+        this.#socket = this.#connect();
+      }, 100);
     });
+
+    return socket;
   }
 }

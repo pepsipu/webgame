@@ -23,7 +23,7 @@ export function collectPhysicsScene(root: Element): PhysicsScene {
   for (const element of bodies) {
     const id = element.id;
 
-    if (id === null) {
+    if (id === "") {
       continue;
     }
 

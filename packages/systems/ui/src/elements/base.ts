@@ -10,14 +10,8 @@ export abstract class UiElement extends Element {
     text: stringField<UiElement>("text"),
   } satisfies ElementFields<UiElement>;
 
-  readonly uiType: UiElementType;
-  text: string;
-
-  constructor(uiType: UiElementType, text = "") {
-    super();
-    this.uiType = uiType;
-    this.text = text;
-  }
+  abstract readonly uiType: UiElementType;
+  text: string = "";
 
   getText(): string {
     return this.text;

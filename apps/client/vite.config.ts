@@ -1,3 +1,4 @@
+import { resolve } from "node:path";
 import { defineConfig } from "vite";
 import wasm from "vite-plugin-wasm";
 
@@ -5,9 +6,6 @@ const clientPort = 5173;
 const allowedHosts = ["webgame.pepsi.pw"];
 const serverUrl = process.env.WEBGAMES_SERVER_URL ?? "http://127.0.0.1:8787";
 const proxy = {
-  "/api": {
-    target: serverUrl,
-  },
   "/ws": {
     target: serverUrl,
     ws: true,
@@ -25,5 +23,13 @@ export default defineConfig({
     port: clientPort,
     allowedHosts,
     proxy,
+  },
+  build: {
+    rollupOptions: {
+      input: {
+        main: resolve(__dirname, "index.html"),
+        server: resolve(__dirname, "server.html"),
+      },
+    },
   },
 });

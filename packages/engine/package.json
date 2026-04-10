@@ -5,7 +5,5 @@
   "exports": {
     ".": "./src/index.ts"
   },
-  "dependencies": {
-    "css-select": "^7.0.0"
-  }
+  "dependencies": {}
 }

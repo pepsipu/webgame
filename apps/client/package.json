@@ -14,6 +14,9 @@
     "@webgames/game": "workspace:*",
     "@webgames/input": "workspace:*",
     "@webgames/network-client": "workspace:*",
+    "@webgames/network-server": "workspace:*",
+    "@webgames/parser": "workspace:*",
+    "@webgames/physics": "workspace:*",
     "@webgames/renderer": "workspace:*",
     "@webgames/script": "workspace:*",
     "@webgames/ui": "workspace:*"

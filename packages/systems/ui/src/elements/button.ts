@@ -5,12 +5,8 @@ export class ButtonElement extends UiElement {
   static readonly tag: string = "button";
   static readonly scriptMethods: readonly string[] = ["wasClicked"];
 
-  #clicked: boolean;
-
-  constructor() {
-    super("button");
-    this.#clicked = false;
-  }
+  readonly uiType = "button" as const;
+  #clicked: boolean = false;
 
   markClicked(): void {
     this.#clicked = true;

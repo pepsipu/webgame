@@ -4,9 +4,7 @@ import { UiElement } from "./base";
 export class ParagraphElement extends UiElement {
   static readonly tag: string = "p";
 
-  constructor() {
-    super("p");
-  }
+  readonly uiType = "p" as const;
 
   override createDomNode(): UiDomNode {
     const paragraph = document.createElement("p");

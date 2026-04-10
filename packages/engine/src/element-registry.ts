@@ -27,6 +27,10 @@ export interface ScriptBindings {
   readonlyProperties: readonly string[];
 }
 
+export function toCustomElementName(tag: string): string {
+  return tag.includes("-") ? tag : `game-${tag}`;
+}
+
 export class ElementRegistry {
   readonly #typesByTag = new Map<string, ElementType>();
 
@@ -45,6 +49,12 @@ export class ElementRegistry {
       }
 
       this.#typesByTag.set(tag, type);
+
+      const customElementName = toCustomElementName(tag);
+
+      if (!customElements.get(customElementName)) {
+        customElements.define(customElementName, type as CustomElementConstructor);
+      }
     }
   }
 
@@ -61,10 +71,13 @@ export class ElementRegistry {
     const tag = this.#requireTag(type);
     const snapshot: ElementSnapshot = {
       tag,
-      id: element.id,
+      id: element.id || null,
       class: [...element.classes],
-      children: element.children
-        .filter((child) => this.#isReplicated(child))
+      children: Array.from(element.children)
+        .filter(
+          (child): child is Element =>
+            child instanceof Element && this.#isReplicated(child),
+        )
         .map((child) => this.getSnapshot(child)),
     };
 
@@ -123,8 +136,9 @@ export class ElementRegistry {
   }
 
   #syncChildren(parent: Element, snapshots: ElementSnapshot[]): void {
-    const children = parent.children.filter((child) =>
-      this.#isReplicated(child),
+    const children = Array.from(parent.children).filter(
+      (child): child is Element =>
+        child instanceof Element && this.#isReplicated(child),
     );
 
     for (let index = 0; index < snapshots.length; index += 1) {
@@ -141,7 +155,7 @@ export class ElementRegistry {
       if (this.#requireTag(childType) !== snapshot.tag) {
         const replacement = this.create(snapshot);
 
-        parent.moveBefore(replacement, child);
+        child.before(replacement);
         child.remove();
         continue;
       }
@@ -159,7 +173,7 @@ export class ElementRegistry {
     type: ElementType,
     snapshot: ElementSnapshot,
   ): void {
-    element.id = snapshot.id ?? null;
+    element.id = snapshot.id ?? "";
     element.classes = snapshot.class ?? [];
 
     this.#forEachField(type, (key, field) => {

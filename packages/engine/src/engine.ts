@@ -21,7 +21,8 @@ export class Engine {
     this.registry = new ElementRegistry();
     this.registry.register(Element);
     this.registry.register(Document);
-    this.document = new Document(this.registry);
+    this.document = new Document();
+    this.document.registry = this.registry;
     this.tickHandlers = [];
     this.afterTickHandlers = [];
     this.destroyHandlers = [];
@@ -47,8 +48,6 @@ export class Engine {
     for (let index = this.destroyHandlers.length - 1; index >= 0; index -= 1) {
       this.destroyHandlers[index](this);
     }
-    while (this.document.childElementCount > 0) {
-      this.document.removeChild(this.document.children[0]);
-    }
+    this.document.replaceChildren();
   }
 }
