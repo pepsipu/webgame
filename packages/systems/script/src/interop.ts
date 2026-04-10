@@ -165,11 +165,7 @@ function toQuickJsValue(
     return createArrayHandle(context, registry, value);
   }
 
-  if (
-    value != null &&
-    typeof value === "object" &&
-    Symbol.iterator in value
-  ) {
+  if (value != null && typeof value === "object" && Symbol.iterator in value) {
     return createArrayHandle(
       context,
       registry,

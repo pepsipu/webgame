@@ -53,7 +53,10 @@ export class ElementRegistry {
       const customElementName = toCustomElementName(tag);
 
       if (!customElements.get(customElementName)) {
-        customElements.define(customElementName, type as CustomElementConstructor);
+        customElements.define(
+          customElementName,
+          type as CustomElementConstructor,
+        );
       }
     }
   }

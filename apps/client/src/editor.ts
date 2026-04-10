@@ -24,9 +24,7 @@ const defaultTabs: readonly Tab[] = [
 ];
 const defaultTabCount = defaultTabs.length;
 
-export function createEditor(
-  onLoad: (text: string) => void,
-): HTMLDivElement {
+export function createEditor(onLoad: (text: string) => void): HTMLDivElement {
   const state = loadEditorState();
   let activeTabIndex = state.activeTabIndex;
   const tabList = [...defaultTabs.map((tab) => ({ ...tab })), ...state.tabs];

@@ -38,9 +38,7 @@ export class Element extends HTMLElement {
   override querySelectorAll<T extends Element = Element>(
     selector: string,
   ): NodeListOf<T> {
-    return super.querySelectorAll(
-      mapSelector(selector),
-    ) as NodeListOf<T>;
+    return super.querySelectorAll(mapSelector(selector)) as NodeListOf<T>;
   }
 }
 

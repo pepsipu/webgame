@@ -45,9 +45,7 @@ export class ServerNetworkServiceElement extends Element {
 
   #connect(): WebSocket {
     const protocol = location.protocol === "https:" ? "wss:" : "ws:";
-    const socket = new WebSocket(
-      `${protocol}//${location.host}/ws?role=host`,
-    );
+    const socket = new WebSocket(`${protocol}//${location.host}/ws?role=host`);
 
     socket.addEventListener("message", (event) => {
       const message = JSON.parse(String(event.data)) as RelayMessage;
