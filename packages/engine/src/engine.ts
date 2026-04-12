@@ -73,7 +73,9 @@ export class Engine {
       }
 
       if (registry.hasTag(tagOrSnapshot)) {
-        return new (registry.requireType(tagOrSnapshot) as unknown as new () => Element)();
+        return new (registry.requireType(
+          tagOrSnapshot,
+        ) as unknown as new () => Element)();
       }
 
       return nativeCreateElement.call(document, tagOrSnapshot, options);
