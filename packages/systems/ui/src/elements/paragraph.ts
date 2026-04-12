@@ -2,7 +2,7 @@ import type { UiDomNode } from "../dom-node";
 import { UiElement } from "./base";
 
 export class ParagraphElement extends UiElement {
-  static readonly tag: string = "p";
+  static readonly tag: string = "wg-p";
 
   readonly uiType = "p" as const;
 

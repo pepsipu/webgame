@@ -2,7 +2,7 @@ import type { UiDomNode } from "../dom-node";
 import { UiElement } from "./base";
 
 export class ButtonElement extends UiElement {
-  static readonly tag: string = "button";
+  static readonly tag: string = "wg-button";
 
   readonly uiType = "button" as const;
   clicked: boolean = false;

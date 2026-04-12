@@ -39,8 +39,12 @@ export class ElementRegistry {
     }
   }
 
+  hasTag(tag: string): boolean {
+    return this.#typesByTag.has(tag);
+  }
+
   create(snapshot: ElementSnapshot): Element {
-    const type = this.#requireType(snapshot.tag);
+    const type = this.requireType(snapshot.tag);
     const element = new (type as unknown as new () => Element)();
 
     this.#syncElement(element, type, snapshot);
@@ -183,7 +187,7 @@ export class ElementRegistry {
     throw new Error(`Element class "${type.name}" is not registered.`);
   }
 
-  #requireType(tag: string): ElementType {
+  requireType(tag: string): ElementType {
     const type = this.#typesByTag.get(tag);
 
     if (type === undefined) {

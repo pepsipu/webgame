@@ -1,30 +1,25 @@
-// Base class for all game elements
-// Interally represented via a div with the element's tag as a class
+// Base class for all game elements.
+// Uses the tag name as the actual DOM element name: <box>, <camera>, etc.
+// Prototype-swapped onto the native element so game methods work on real DOM nodes.
+
+const nativeCreateElement = Document.prototype.createElement;
 
 export class Element {
   static readonly tag: string = "element";
 
   constructor() {
-    // prototype chain hacking
-    const div = document.createElement("div");
-    Object.setPrototypeOf(div, new.target.prototype);
-
-    // read the class's tag, and add it to the div classlist
     const tag = (new.target as typeof Element).tag;
-    div.classList.add(tag);
-
-    return div as unknown as Element;
+    const el = nativeCreateElement.call(document, tag);
+    Object.setPrototypeOf(el, new.target.prototype);
+    return el as unknown as Element;
   }
 
-  // for interal registry logic, strip out the tag from the class list
   get classes(): readonly string[] {
-    const tag = (this.constructor as typeof Element).tag;
-    return Array.from(this.classList).filter((c) => c !== tag);
+    return Array.from(this.classList);
   }
 
   set classes(value: readonly string[]) {
-    const tag = (this.constructor as typeof Element).tag;
-    this.className = [tag, ...value].filter(Boolean).join(" ");
+    this.className = value.join(" ");
   }
 
   get parent(): Element | null {
@@ -33,6 +28,6 @@ export class Element {
   }
 }
 
-Object.setPrototypeOf(Element.prototype, HTMLDivElement.prototype);
+Object.setPrototypeOf(Element.prototype, HTMLElement.prototype);
 
-export interface Element extends HTMLDivElement {}
+export interface Element extends HTMLElement {}

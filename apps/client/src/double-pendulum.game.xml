@@ -63,12 +63,12 @@
     anchor2="0 0.75 0"
   />
 
-  <button id="spawn-box">Spawn box</button>
-  <button id="boost-cubes">Boost cubes</button>
+  <wg-button id="spawn-box">Spawn box</wg-button>
+  <wg-button id="boost-cubes">Boost cubes</wg-button>
 
   <script>
-    const input = document.querySelector(".input");
-    const network = document.querySelector(".network");
+    const input = document.querySelector("wg-input");
+    const network = document.querySelector("network");
     const lowerLink = document.querySelector("#lower-link");
     const spawnBox = document.querySelector("#spawn-box");
     const boostCubes = document.querySelector("#boost-cubes");
@@ -128,7 +128,7 @@
     function spawnBoxAtOrigin() {
       const offset = (spawnedBoxes % 5) * 0.45 - 0.9;
 
-      let newBox = document.createGameElement({
+      let newBox = document.createElement({
         tag: "box",
         class: ["cube"],
         position: [offset, 3.2, 0],

@@ -1,6 +1,6 @@
 import { Element } from "./element";
-import type { ElementSnapshot } from "./snapshot";
 import { ElementRegistry } from "./element-registry";
+import type { ElementSnapshot } from "./snapshot";
 
 export interface EngineSystem {
   install(engine: Engine): void;
@@ -9,6 +9,8 @@ export interface EngineSystem {
 export type EngineTickHandler = (engine: Engine, deltaTime: number) => void;
 export type EngineAfterTickHandler = (engine: Engine) => void;
 export type EngineDestroyHandler = (engine: Engine) => void;
+
+const nativeCreateElement = Document.prototype.createElement;
 
 export class Engine {
   readonly document: Document;
@@ -25,13 +27,7 @@ export class Engine {
     this.afterTickHandlers = [];
     this.destroyHandlers = [];
 
-    // inject custom function document.createGameElement()
-    (document as any).createGameElement = (
-      snapshot: ElementSnapshot,
-    ): Element => {
-      const element = this.registry.create(snapshot);
-      return element;
-    };
+    this.#patchCreateElement();
 
     for (const system of systems) {
       system.install(this);
@@ -55,12 +51,41 @@ export class Engine {
       this.destroyHandlers[index](this);
     }
 
-    delete (document as any).createGameElement;
+    this.#restoreCreateElement();
 
     for (const child of Array.from(document.body.children)) {
       if (child instanceof Element) {
         child.remove();
       }
     }
+  }
+
+  #patchCreateElement(): void {
+    const registry = this.registry;
+
+    (document as any).createElement = function (
+      tagOrSnapshot: string | ElementSnapshot,
+      options?: ElementCreationOptions,
+    ): HTMLElement {
+      if (typeof tagOrSnapshot === "object") {
+        const element = registry.create(tagOrSnapshot);
+        return element;
+      }
+
+      if (registry.hasTag(tagOrSnapshot)) {
+        return new (registry.requireType(tagOrSnapshot) as unknown as new () => Element)();
+      }
+
+      return nativeCreateElement.call(document, tagOrSnapshot, options);
+    };
+  }
+
+  #restoreCreateElement(): void {
+    (document as any).createElement = function (
+      tag: string,
+      options?: ElementCreationOptions,
+    ) {
+      return nativeCreateElement.call(document, tag, options);
+    };
   }
 }

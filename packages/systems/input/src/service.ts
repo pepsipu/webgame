@@ -1,7 +1,7 @@
 import { Element } from "@webgames/engine";
 
 export class InputServiceElement extends Element {
-  static readonly tag: string = "input";
+  static readonly tag: string = "wg-input";
   static readonly replicated: boolean = false;
 
   down: Set<string>;
