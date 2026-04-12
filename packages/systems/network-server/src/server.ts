@@ -19,38 +19,38 @@ export class ServerNetworkServiceElement extends Element {
   static readonly replicated: boolean = false;
   static readonly scriptMethods: readonly string[] = ["pollEvent"];
 
-  #destroyed: boolean = false;
-  #socket: WebSocket;
-  readonly #incomingEvents: ServerNetworkEvent[] = [];
+  private isDestroyed: boolean = false;
+  private socket: WebSocket;
+  private readonly incomingEvents: ServerNetworkEvent[] = [];
 
   constructor() {
     super();
-    this.#socket = this.#connect();
+    this.socket = this.connect();
   }
 
   pollEvent(): ServerNetworkEvent | undefined {
-    return this.#incomingEvents.shift();
+    return this.incomingEvents.shift();
   }
 
-  broadcastSnapshot(registry: ElementRegistry, root: Element): void {
-    if (this.#socket.readyState === WebSocket.OPEN) {
-      this.#socket.send(JSON.stringify(registry.getSnapshot(root)));
+  broadcastSnapshot(registry: ElementRegistry): void {
+    if (this.socket.readyState === WebSocket.OPEN) {
+      this.socket.send(JSON.stringify(registry.getGameSnapshot()));
     }
   }
 
   destroy(): void {
-    this.#destroyed = true;
-    this.#socket.close();
+    this.isDestroyed = true;
+    this.socket.close();
   }
 
-  #connect(): WebSocket {
+  private connect(): WebSocket {
     const protocol = location.protocol === "https:" ? "wss:" : "ws:";
     const socket = new WebSocket(`${protocol}//${location.host}/ws?role=host`);
 
     socket.addEventListener("message", (event) => {
       const message = JSON.parse(String(event.data)) as RelayMessage;
 
-      this.#incomingEvents.push({
+      this.incomingEvents.push({
         clientId: message.clientId,
         name: message.type === "event" ? message.name! : message.type,
         data: message.type === "event" ? message.data : null,
@@ -58,16 +58,16 @@ export class ServerNetworkServiceElement extends Element {
     });
 
     socket.addEventListener("close", () => {
-      if (this.#destroyed) {
+      if (this.isDestroyed) {
         return;
       }
 
       window.setTimeout(() => {
-        if (this.#destroyed) {
+        if (this.isDestroyed) {
           return;
         }
 
-        this.#socket = this.#connect();
+        this.socket = this.connect();
       }, 100);
     });
 

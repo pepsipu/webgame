@@ -6,8 +6,6 @@
     ".": "./src/index.ts"
   },
   "dependencies": {
-    "@jitl/quickjs-ng-wasmfile-release-sync": "^0.32.0",
-    "@webgames/engine": "workspace:*",
-    "quickjs-emscripten-core": "^0.32.0"
+    "@webgames/engine": "workspace:*"
   }
 }

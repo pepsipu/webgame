@@ -10,7 +10,7 @@ export function createUiSystem(root: HTMLDivElement): EngineSystem {
     install(engine) {
       engine.registry.register(ButtonElement, ParagraphElement);
       engine.tickHandlers.push((engine) => {
-        overlay.render(engine.document);
+        overlay.render(document);
       });
       engine.afterTickHandlers.push(() => {
         overlay.clearFrame();

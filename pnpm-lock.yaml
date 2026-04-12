@@ -154,15 +154,9 @@ importers:
 
   packages/systems/script:
     dependencies:
-      '@jitl/quickjs-ng-wasmfile-release-sync':
-        specifier: ^0.32.0
-        version: 0.32.0
       '@webgames/engine':
         specifier: workspace:*
         version: link:../../engine
-      quickjs-emscripten-core:
-        specifier: ^0.32.0
-        version: 0.32.0
 
   packages/systems/ui:
     dependencies:
@@ -345,12 +339,6 @@ packages:
     engines: {node: '>=18.14.1'}
     peerDependencies:
       hono: ^4
-
-  '@jitl/quickjs-ffi-types@0.32.0':
-    resolution: {integrity: sha512-v9T+GQpmk43VDJ7d72sf0Nexhk+ArvtUihW27dy7lqAl0zBObFKtSBBIm5RBjwIhE8VwsPPm9PNuvPvNqLWUEg==}
-
-  '@jitl/quickjs-ng-wasmfile-release-sync@0.32.0':
-    resolution: {integrity: sha512-XAX2jjZWWh3M0YaRqi82xMKNW/gkF6mo3MpW3UY2cmVxnQai1JuboVsJQVoLU629iEL4XWvHtO4h5lo7NRnAcg==}
 
   '@napi-rs/wasm-runtime@1.1.1':
     resolution: {integrity: sha512-p64ah1M1ld8xjWv3qbvFwHiFVWrq1yFvV4f7w+mzaqiR4IlSgkqhcRdHwsGgomwzBH51sRY4NEowLxnaBjcW/A==}
@@ -627,9 +615,6 @@ packages:
     engines: {node: '>=14'}
     hasBin: true
 
-  quickjs-emscripten-core@0.32.0:
-    resolution: {integrity: sha512-QFnPfjFey8EqknSrSxe1hZrf1/8z7/6s1QzGOmKo6++02r7QRRX7ZoyNaZh7JuVjWsVW87KnQrbZqnHkOAzUyg==}
-
   regexp-to-ast@0.5.0:
     resolution: {integrity: sha512-tlbJqcMHnPKI9zSrystikWKwHkBqu2a/Sgw01h3zFjvYrMxEDYHzzoMZnUrbIfpTFEsoRnnviOXNCzFiSc54Qw==}
 
@@ -833,12 +818,6 @@ snapshots:
   '@hono/node-server@1.19.11(hono@4.12.8)':
     dependencies:
       hono: 4.12.8
-
-  '@jitl/quickjs-ffi-types@0.32.0': {}
-
-  '@jitl/quickjs-ng-wasmfile-release-sync@0.32.0':
-    dependencies:
-      '@jitl/quickjs-ffi-types': 0.32.0
 
   '@napi-rs/wasm-runtime@1.1.1':
     dependencies:
@@ -1059,10 +1038,6 @@ snapshots:
       source-map-js: 1.2.1
 
   prettier@3.8.1: {}
-
-  quickjs-emscripten-core@0.32.0:
-    dependencies:
-      '@jitl/quickjs-ffi-types': 0.32.0
 
   regexp-to-ast@0.5.0: {}
 

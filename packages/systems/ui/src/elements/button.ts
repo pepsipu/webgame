@@ -6,18 +6,18 @@ export class ButtonElement extends UiElement {
   static readonly scriptMethods: readonly string[] = ["wasClicked"];
 
   readonly uiType = "button" as const;
-  #clicked: boolean = false;
+  clicked: boolean = false;
 
   markClicked(): void {
-    this.#clicked = true;
+    this.clicked = true;
   }
 
   override clearFrame(): void {
-    this.#clicked = false;
+    this.clicked = false;
   }
 
   wasClicked(): boolean {
-    return this.#clicked;
+    return this.clicked;
   }
 
   override createDomNode(): UiDomNode {

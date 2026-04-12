@@ -1,4 +1,4 @@
-import { type Element, selectElement, selectElements } from "@webgames/engine";
+import { type Element, type QueryRoot, selectElement, selectElements } from "@webgames/engine";
 import { CameraElement, ShapeElement, Transform } from "@webgames/game";
 import { createDrawState, type DrawState, setDrawState } from "./draw-state";
 import {
@@ -166,7 +166,7 @@ export class Renderer {
     this.#cameraBuffer.destroy();
   }
 
-  render(document: Element): void {
+  render(document: QueryRoot): void {
     const camera = selectElement(
       document,
       (element): element is CameraElement => element instanceof CameraElement,

@@ -1,5 +1,5 @@
 import {
-  type Element as EngineElement,
+  type QueryRoot,
   selectElements,
 } from "@webgames/engine";
 import type { UiDomNode } from "./dom-node";
@@ -14,7 +14,7 @@ export class UiOverlay {
     this.root = root;
   }
 
-  render(root: EngineElement): void {
+  render(root: QueryRoot): void {
     const used = new Set<UiElement>();
     const children: HTMLElement[] = [];
 

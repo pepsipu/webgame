@@ -1,6 +1,4 @@
-import { toCustomElementName } from "./element-registry";
-
-export class Element extends HTMLElement {
+export class Element {
   static readonly tag: string = "element";
   static readonly scriptProperties: readonly string[] = ["id", "classes"];
   static readonly readonlyScriptProperties: readonly string[] = [
@@ -16,35 +14,35 @@ export class Element extends HTMLElement {
     "querySelectorAll",
   ];
 
+  constructor() {
+    const div = document.createElement("div");
+    Object.setPrototypeOf(div, new.target.prototype);
+
+    const tag = (new.target as typeof Element).tag;
+
+    if (tag) {
+      div.classList.add(tag);
+    }
+
+    return div as unknown as Element;
+  }
+
   get classes(): readonly string[] {
-    return Array.from(this.classList);
+    const tag = (this.constructor as typeof Element).tag;
+    return Array.from(this.classList).filter((c) => c !== tag);
   }
 
   set classes(value: readonly string[]) {
-    this.className = value.join(" ");
+    const tag = (this.constructor as typeof Element).tag;
+    this.className = [tag, ...value].filter(Boolean).join(" ");
   }
 
   get parent(): Element | null {
     const parent = this.parentElement;
     return parent instanceof Element ? parent : null;
   }
-
-  override querySelector<T extends Element = Element>(
-    selector: string,
-  ): T | null {
-    return super.querySelector(mapSelector(selector)) as T | null;
-  }
-
-  override querySelectorAll<T extends Element = Element>(
-    selector: string,
-  ): NodeListOf<T> {
-    return super.querySelectorAll(mapSelector(selector)) as NodeListOf<T>;
-  }
 }
 
-function mapSelector(selector: string): string {
-  return selector.replace(
-    /(?<=^|[\s>+~,])([a-z][a-z0-9]*)(?=[\s>+~,.#\[:)]|$)/g,
-    (match) => toCustomElementName(match),
-  );
-}
+Object.setPrototypeOf(Element.prototype, HTMLDivElement.prototype);
+
+export interface Element extends HTMLDivElement {}

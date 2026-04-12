@@ -3,21 +3,11 @@ import {
   type EngineSystem,
   selectElements,
 } from "@webgames/engine";
-import type { QuickJSRuntime } from "quickjs-emscripten-core";
 import { ScriptElement } from "./element";
-import { createDeadlineInterruptHandler, getQuickJS } from "./module";
 import { ScriptState } from "./runtime";
 
-const scriptTickBudgetMs = 250;
-
 export class ScriptSystem implements EngineSystem {
-  readonly runtime: QuickJSRuntime;
-  readonly scripts: Map<ScriptElement, ScriptState>;
-
-  constructor() {
-    this.runtime = getQuickJS().newRuntime();
-    this.scripts = new Map();
-  }
+  readonly scripts: Map<ScriptElement, ScriptState> = new Map();
 
   install(engine: Engine): void {
     engine.registry.register(ScriptElement);
@@ -33,21 +23,13 @@ export class ScriptSystem implements EngineSystem {
     this.syncScripts(engine);
 
     for (const state of this.scripts.values()) {
-      this.runtime.setInterruptHandler(
-        createDeadlineInterruptHandler(Date.now() + scriptTickBudgetMs),
-      );
-
-      try {
-        state.tick(deltaTime);
-      } finally {
-        this.runtime.removeInterruptHandler();
-      }
+      state.tick(deltaTime);
     }
   }
 
   private syncScripts(engine: Engine): void {
     const active = new Set(
-      selectElements(engine.document, (element): element is ScriptElement => {
+      selectElements(document, (element): element is ScriptElement => {
         return element instanceof ScriptElement;
       }),
     );
@@ -56,15 +38,7 @@ export class ScriptSystem implements EngineSystem {
       const existing = this.scripts.get(element);
 
       if (existing === undefined) {
-        this.scripts.set(
-          element,
-          new ScriptState(
-            this.runtime,
-            engine.registry,
-            engine.document,
-            element,
-          ),
-        );
+        this.scripts.set(element, new ScriptState(element.text));
         continue;
       }
 
@@ -73,15 +47,7 @@ export class ScriptSystem implements EngineSystem {
       }
 
       existing.destroy();
-      this.scripts.set(
-        element,
-        new ScriptState(
-          this.runtime,
-          engine.registry,
-          engine.document,
-          element,
-        ),
-      );
+      this.scripts.set(element, new ScriptState(element.text));
     }
 
     for (const [element, state] of this.scripts) {
@@ -100,6 +66,5 @@ export class ScriptSystem implements EngineSystem {
     }
 
     this.scripts.clear();
-    this.runtime.dispose();
   }
 }

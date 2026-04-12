@@ -1,11 +1,13 @@
 import { Element } from "./element";
 
+export type QueryRoot = { readonly children: HTMLCollection };
+
 type ElementQuery<T extends Element = Element> =
   | ((element: Element) => element is T)
   | ((element: Element) => boolean);
 
 export function selectElements<T extends Element = Element>(
-  root: Element,
+  root: QueryRoot,
   query: ElementQuery<T>,
 ): T[] {
   const results: T[] = [];
@@ -18,7 +20,7 @@ export function selectElements<T extends Element = Element>(
 }
 
 export function selectElement<T extends Element = Element>(
-  root: Element,
+  root: QueryRoot,
   query: ElementQuery<T>,
 ): T | null {
   for (const child of Array.from(root.children)) {
@@ -27,7 +29,13 @@ export function selectElement<T extends Element = Element>(
         return child as T;
       }
 
-      const found = selectElement(child, query);
+      const found = selectElement<T>(child, query);
+
+      if (found !== null) {
+        return found;
+      }
+    } else if (child.children.length > 0) {
+      const found = selectElement<T>(child, query);
 
       if (found !== null) {
         return found;
@@ -38,10 +46,12 @@ export function selectElement<T extends Element = Element>(
   return null;
 }
 
-function walkTree(root: Element, callback: (element: Element) => void): void {
+function walkTree(root: QueryRoot, callback: (element: Element) => void): void {
   for (const child of Array.from(root.children)) {
     if (child instanceof Element) {
       callback(child);
+      walkTree(child, callback);
+    } else if (child.children.length > 0) {
       walkTree(child, callback);
     }
   }

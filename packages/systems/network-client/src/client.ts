@@ -1,19 +1,19 @@
-import type { ElementRegistry } from "@webgames/engine";
-import { Element, type ElementSnapshot } from "@webgames/engine";
+import type { ElementRegistry, ElementSnapshot } from "@webgames/engine";
+import { Element } from "@webgames/engine";
 
 export class ClientNetworkServiceElement extends Element {
   static readonly tag: string = "network";
   static readonly replicated: boolean = false;
   static readonly scriptMethods: readonly string[] = ["emit"];
 
-  #destroyed: boolean;
-  #pendingSnapshot?: ElementSnapshot;
+  destroyed: boolean;
+  pendingSnapshot?: ElementSnapshot;
   socket: WebSocket;
 
   constructor() {
     super();
-    this.#destroyed = false;
-    this.socket = this.#createSocket();
+    this.destroyed = false;
+    this.socket = this.createSocket();
   }
 
   emit(name: string, data: unknown): void {
@@ -24,51 +24,53 @@ export class ClientNetworkServiceElement extends Element {
     this.socket.send(JSON.stringify({ name, data }));
   }
 
-  applyPendingSnapshot(registry: ElementRegistry, root: Element): void {
-    if (this.#pendingSnapshot === undefined) {
+  applyPendingSnapshot(registry: ElementRegistry): void {
+    if (this.pendingSnapshot === undefined) {
       return;
     }
 
-    const snapshot = this.#pendingSnapshot;
+    const snapshot = this.pendingSnapshot;
 
-    this.#pendingSnapshot = undefined;
-    registry.applySnapshot(root, snapshot);
+    this.pendingSnapshot = undefined;
+    registry.loadGameSnapshot(snapshot);
   }
 
   destroy(): void {
-    this.#destroyed = true;
+    this.destroyed = true;
     this.socket.close();
   }
 
-  #getWebSocketUrl(): string {
+  private getWebSocketUrl(): string {
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
 
     return `${protocol}//${window.location.host}/ws`;
   }
 
-  #createSocket(): WebSocket {
-    const socket = new WebSocket(this.#getWebSocketUrl());
+  private createSocket(): WebSocket {
+    const socket = new WebSocket(this.getWebSocketUrl());
 
     socket.addEventListener("message", (event) => {
-      this.#pendingSnapshot = JSON.parse(String(event.data)) as ElementSnapshot;
+      this.pendingSnapshot = JSON.parse(
+        String(event.data),
+      ) as ElementSnapshot;
     });
     socket.addEventListener("close", () => {
-      if (this.#destroyed) {
+      if (this.destroyed) {
         return;
       }
 
-      this.#pendingSnapshot = {
+      this.pendingSnapshot = {
         tag: "game",
         id: null,
         class: [],
         children: [],
       };
       window.setTimeout(() => {
-        if (this.#destroyed) {
+        if (this.destroyed) {
           return;
         }
 
-        this.socket = this.#createSocket();
+        this.socket = this.createSocket();
       }, 100);
     });
 

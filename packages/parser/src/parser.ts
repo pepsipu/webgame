@@ -10,7 +10,7 @@ import {
 
 // loads the game file onto an engine instance.
 export function loadGameFile(engine: Engine, text: string): void {
-  engine.registry.applySnapshot(engine.document, parseGameFile(text));
+  engine.registry.loadGameSnapshot(parseGameFile(text));
 }
 
 export function parseGameFile(text: string): ElementSnapshot {

@@ -67,8 +67,8 @@
   <button id="boost-cubes">Boost cubes</button>
 
   <script>
-    const input = document.querySelector("input");
-    const network = document.querySelector("network");
+    const input = document.querySelector(".input");
+    const network = document.querySelector(".network");
     const lowerLink = document.querySelector("#lower-link");
     const spawnBox = document.querySelector("#spawn-box");
     const boostCubes = document.querySelector("#boost-cubes");
@@ -128,7 +128,7 @@
     function spawnBoxAtOrigin() {
       const offset = (spawnedBoxes % 5) * 0.45 - 0.9;
 
-      document.createElement({
+      let newBox = document.createGameElement({
         tag: "box",
         class: ["cube"],
         position: [offset, 3.2, 0],
@@ -138,6 +138,8 @@
         color: [0.9, 0.48, 0.18],
         body: "dynamic",
       });
+      
+      document.body.append(newBox);
       spawnedBoxes += 1;
     }
 

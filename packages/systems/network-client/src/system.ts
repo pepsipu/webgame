@@ -5,10 +5,10 @@ export const clientNetworkSystem: EngineSystem = {
   install(engine) {
     engine.registry.register(ClientNetworkServiceElement);
     const networkService = new ClientNetworkServiceElement();
-    engine.document.append(networkService);
+    document.body.append(networkService);
 
     engine.tickHandlers.push(() => {
-      networkService.applyPendingSnapshot(engine.registry, engine.document);
+      networkService.applyPendingSnapshot(engine.registry);
     });
     engine.destroyHandlers.push(() => {
       networkService.destroy();

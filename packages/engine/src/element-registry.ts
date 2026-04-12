@@ -27,10 +27,6 @@ export interface ScriptBindings {
   readonlyProperties: readonly string[];
 }
 
-export function toCustomElementName(tag: string): string {
-  return tag.includes("-") ? tag : `game-${tag}`;
-}
-
 export class ElementRegistry {
   readonly #typesByTag = new Map<string, ElementType>();
 
@@ -49,15 +45,6 @@ export class ElementRegistry {
       }
 
       this.#typesByTag.set(tag, type);
-
-      const customElementName = toCustomElementName(tag);
-
-      if (!customElements.get(customElementName)) {
-        customElements.define(
-          customElementName,
-          type as CustomElementConstructor,
-        );
-      }
     }
   }
 
@@ -104,6 +91,22 @@ export class ElementRegistry {
     this.#syncElement(element, type, snapshot);
   }
 
+  getGameSnapshot(): ElementSnapshot {
+    return {
+      tag: "game",
+      children: Array.from(document.body.children)
+        .filter(
+          (child): child is Element =>
+            child instanceof Element && this.#isReplicated(child),
+        )
+        .map((child) => this.getSnapshot(child)),
+    };
+  }
+
+  loadGameSnapshot(snapshot: ElementSnapshot): void {
+    this.#syncChildren(document.body, snapshot.children ?? []);
+  }
+
   getScriptBindings(element: Element): ScriptBindings {
     const methods = new Set<string>();
     const properties = new Set<string>();
@@ -138,7 +141,10 @@ export class ElementRegistry {
     };
   }
 
-  #syncChildren(parent: Element, snapshots: ElementSnapshot[]): void {
+  #syncChildren(
+    parent: Element | HTMLElement,
+    snapshots: ElementSnapshot[],
+  ): void {
     const children = Array.from(parent.children).filter(
       (child): child is Element =>
         child instanceof Element && this.#isReplicated(child),

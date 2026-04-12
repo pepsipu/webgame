@@ -28,8 +28,8 @@
     let seconds = 0;
     let animationEnabled = true;
     const cameraSpeed = 3;
-    const input = document.querySelector("input");
-    const network = document.querySelector("network");
+    const input = document.querySelector(".input");
+    const network = document.querySelector(".network");
     const camera = document.querySelector("#camera");
     const box = document.querySelector("#box");
     const boxJoint = document.querySelector("#box-joint");

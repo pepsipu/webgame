@@ -5,7 +5,7 @@ export const inputSystem: EngineSystem = {
   install(engine) {
     engine.registry.register(InputServiceElement);
     const inputService = new InputServiceElement();
-    engine.document.append(inputService);
+    document.body.append(inputService);
 
     const onKeyDown = (event: KeyboardEvent): void => {
       inputService.pressKey(event.code);
