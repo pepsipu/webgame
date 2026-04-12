@@ -50,9 +50,7 @@ export class ClientNetworkServiceElement extends Element {
     const socket = new WebSocket(this.getWebSocketUrl());
 
     socket.addEventListener("message", (event) => {
-      this.pendingSnapshot = JSON.parse(
-        String(event.data),
-      ) as ElementSnapshot;
+      this.pendingSnapshot = JSON.parse(String(event.data)) as ElementSnapshot;
     });
     socket.addEventListener("close", () => {
       if (this.destroyed) {

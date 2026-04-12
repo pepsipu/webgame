@@ -1,4 +1,9 @@
-import { type Element, type QueryRoot, selectElement, selectElements } from "@webgames/engine";
+import {
+  type Element,
+  type QueryRoot,
+  selectElement,
+  selectElements,
+} from "@webgames/engine";
 import { CameraElement, ShapeElement, Transform } from "@webgames/game";
 import { createDrawState, type DrawState, setDrawState } from "./draw-state";
 import {

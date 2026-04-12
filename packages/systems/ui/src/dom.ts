@@ -1,7 +1,4 @@
-import {
-  type QueryRoot,
-  selectElements,
-} from "@webgames/engine";
+import { type QueryRoot, selectElements } from "@webgames/engine";
 import type { UiDomNode } from "./dom-node";
 import { UiElement } from "./elements";
 
