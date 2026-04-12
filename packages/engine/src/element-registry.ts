@@ -1,6 +1,9 @@
 import { Element } from "./element";
 import type { ElementSnapshot } from "./snapshot";
 
+// stored before any patching, used by Element constructor and registry
+export const nativeCreateElement = Document.prototype.createElement;
+
 export interface ElementField<T extends Element = Element> {
   get?(element: T): unknown;
   set(element: T, value: unknown): void;

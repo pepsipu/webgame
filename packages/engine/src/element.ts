@@ -2,7 +2,7 @@
 // Uses the tag name as the actual DOM element name: <box>, <camera>, etc.
 // Prototype-swapped onto the native element so game methods work on real DOM nodes.
 
-const nativeCreateElement = Document.prototype.createElement;
+import { nativeCreateElement } from "./element-registry";
 
 export class Element {
   static readonly tag: string = "element";

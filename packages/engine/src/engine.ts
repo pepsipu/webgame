@@ -1,5 +1,5 @@
 import { Element } from "./element";
-import { ElementRegistry } from "./element-registry";
+import { ElementRegistry, nativeCreateElement } from "./element-registry";
 import type { ElementSnapshot } from "./snapshot";
 
 export interface EngineSystem {
@@ -9,8 +9,6 @@ export interface EngineSystem {
 export type EngineTickHandler = (engine: Engine, deltaTime: number) => void;
 export type EngineAfterTickHandler = (engine: Engine) => void;
 export type EngineDestroyHandler = (engine: Engine) => void;
-
-const nativeCreateElement = Document.prototype.createElement;
 
 export class Engine {
   readonly document: Document;
@@ -67,17 +65,14 @@ export class Engine {
       tagOrSnapshot: string | ElementSnapshot,
       options?: ElementCreationOptions,
     ): HTMLElement {
+      // if the argument is a snapshot or a registered tag, create from registry
       if (typeof tagOrSnapshot === "object") {
-        const element = registry.create(tagOrSnapshot);
-        return element;
+        return registry.create(tagOrSnapshot as ElementSnapshot);
+      } else if (registry.hasTag(tagOrSnapshot)) {
+        return registry.create({ tag: tagOrSnapshot });
       }
 
-      if (registry.hasTag(tagOrSnapshot)) {
-        return new (registry.requireType(
-          tagOrSnapshot,
-        ) as unknown as new () => Element)();
-      }
-
+      // otherwise, create a normal DOM element
       return nativeCreateElement.call(document, tagOrSnapshot, options);
     };
   }

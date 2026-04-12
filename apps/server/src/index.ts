@@ -18,7 +18,7 @@ wss.on("connection", (socket, req) => {
   const url = new URL(req.url!, `http://${req.headers.host}`);
 
   if (url.searchParams.get("role") === "host") {
-    // todo: breaks when another person tries to become host
+    // TODO: breaks when another person tries to become host
     // need to handle logic
     host = socket;
 

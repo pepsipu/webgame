@@ -10,6 +10,7 @@ export class ScriptState {
   tick(deltaTime: number): void {
     if (this.#tick === null) {
       try {
+        // lazily initialize the script at the first tick
         const getTick = new Function(
           this.source +
             '\nreturn typeof tick === "function" ? tick : undefined;',
@@ -21,6 +22,7 @@ export class ScriptState {
       }
     }
 
+    // execute the tick function if it exists
     try {
       this.#tick?.(deltaTime);
     } catch (error) {
