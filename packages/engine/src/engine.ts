@@ -11,14 +11,12 @@ export type EngineAfterTickHandler = (engine: Engine) => void;
 export type EngineDestroyHandler = (engine: Engine) => void;
 
 export class Engine {
-  readonly document: Document;
   readonly registry: ElementRegistry;
   readonly tickHandlers: EngineTickHandler[];
   readonly afterTickHandlers: EngineAfterTickHandler[];
   readonly destroyHandlers: EngineDestroyHandler[];
 
   constructor(systems: EngineSystem[]) {
-    this.document = globalThis.document;
     this.registry = new ElementRegistry();
     this.registry.register(Element);
     this.tickHandlers = [];
