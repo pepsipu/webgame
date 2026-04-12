@@ -16,16 +16,7 @@ export type ElementType<T extends Element = Element> = (new (
   readonly tag?: string;
   readonly fields?: ElementFields<any>;
   readonly replicated?: boolean;
-  readonly scriptMethods?: readonly string[];
-  readonly scriptProperties?: readonly string[];
-  readonly readonlyScriptProperties?: readonly string[];
 };
-
-export interface ScriptBindings {
-  methods: readonly string[];
-  properties: readonly string[];
-  readonlyProperties: readonly string[];
-}
 
 export class ElementRegistry {
   readonly #typesByTag = new Map<string, ElementType>();
@@ -105,40 +96,6 @@ export class ElementRegistry {
 
   loadGameSnapshot(snapshot: ElementSnapshot): void {
     this.#syncChildren(document.body, snapshot.children ?? []);
-  }
-
-  getScriptBindings(element: Element): ScriptBindings {
-    const methods = new Set<string>();
-    const properties = new Set<string>();
-    const readonlyProperties = new Set<string>();
-
-    for (const type of getElementTypeChain(getElementType(element))) {
-      if (Object.hasOwn(type, "scriptMethods")) {
-        for (const method of type.scriptMethods ?? []) {
-          methods.add(method);
-        }
-      }
-
-      if (Object.hasOwn(type, "scriptProperties")) {
-        for (const property of type.scriptProperties ?? []) {
-          properties.add(property);
-          readonlyProperties.delete(property);
-        }
-      }
-
-      if (Object.hasOwn(type, "readonlyScriptProperties")) {
-        for (const property of type.readonlyScriptProperties ?? []) {
-          properties.delete(property);
-          readonlyProperties.add(property);
-        }
-      }
-    }
-
-    return {
-      methods: [...methods],
-      properties: [...properties],
-      readonlyProperties: [...readonlyProperties],
-    };
   }
 
   #syncChildren(

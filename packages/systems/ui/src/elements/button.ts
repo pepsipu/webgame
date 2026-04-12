@@ -3,7 +3,6 @@ import { UiElement } from "./base";
 
 export class ButtonElement extends UiElement {
   static readonly tag: string = "button";
-  static readonly scriptMethods: readonly string[] = ["wasClicked"];
 
   readonly uiType = "button" as const;
   clicked: boolean = false;

@@ -17,7 +17,6 @@ type RelayMessage = {
 export class ServerNetworkServiceElement extends Element {
   static readonly tag: string = "network";
   static readonly replicated: boolean = false;
-  static readonly scriptMethods: readonly string[] = ["pollEvent"];
 
   private isDestroyed: boolean = false;
   private socket: WebSocket;

@@ -5,7 +5,6 @@ import type { UiDomNode } from "../dom-node";
 type UiElementType = "p" | "button";
 
 export abstract class UiElement extends Element {
-  static readonly scriptMethods: readonly string[] = ["getText", "setText"];
   static readonly fields: ElementFields<any> = {
     text: stringField<UiElement>("text"),
   } satisfies ElementFields<UiElement>;

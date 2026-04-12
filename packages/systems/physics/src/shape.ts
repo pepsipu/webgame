@@ -6,7 +6,6 @@ export type PhysicsBodyType = "none" | "fixed" | "dynamic";
 
 type ShapeElementType = typeof ShapeElement & {
   fields: Record<string, ElementField<ShapeElement>>;
-  scriptMethods: string[];
   prototype: ShapeElement & { body: PhysicsBodyType };
 };
 
@@ -33,13 +32,6 @@ export function installShapePhysics(): void {
         requireBodyType(value);
     },
   };
-  type.scriptMethods = [
-    ...type.scriptMethods,
-    "applyForce",
-    "applyForceAtPoint",
-    "applyImpulse",
-    "applyImpulseAtPoint",
-  ];
   Object.assign(type.prototype, {
     body: "none" as PhysicsBodyType,
     applyForce(this: ShapeElement, x: number, y: number, z: number): void {

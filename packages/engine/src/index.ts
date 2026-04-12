@@ -8,7 +8,6 @@ export type {
   ElementField,
   ElementFields,
   ElementType,
-  ScriptBindings,
 } from "./element-registry";
 export type { ElementSnapshot } from "./snapshot";
 export type {

@@ -4,7 +4,6 @@ import { Element } from "@webgames/engine";
 export class ClientNetworkServiceElement extends Element {
   static readonly tag: string = "network";
   static readonly replicated: boolean = false;
-  static readonly scriptMethods: readonly string[] = ["emit"];
 
   destroyed: boolean;
   pendingSnapshot?: ElementSnapshot;

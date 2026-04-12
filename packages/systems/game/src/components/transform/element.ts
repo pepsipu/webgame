@@ -6,12 +6,6 @@ import { Transform } from "./value";
 
 export class TransformElement extends Element {
   static readonly tag: string = "transform";
-  static readonly scriptMethods: readonly string[] = [
-    "setPosition",
-    "setRotation",
-    "setRotationFromEuler",
-    "setScale",
-  ];
   static readonly fields: ElementFields<any> = {
     position: vector3Field<TransformElement>(
       "position",

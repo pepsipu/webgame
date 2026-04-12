@@ -5,7 +5,6 @@ import { TransformElement, vector3Field } from "./transform";
 import { Vector3 } from "../math/vector3";
 
 export abstract class ShapeElement extends TransformElement {
-  static readonly scriptMethods: readonly string[] = ["setColor"];
   static readonly fields: ElementFields<any> = {
     color: vector3Field<ShapeElement>("color", (element) => element.material),
   } satisfies ElementFields<ShapeElement>;
