@@ -1,26 +1,28 @@
-import type { ElementFields } from "@webgames/engine";
-import { Element, stringField } from "@webgames/engine";
-import type { UiDomNode } from "../dom-node";
-
-type UiElementType = "p" | "button";
+import type { ElementField, ElementFields } from "@webgames/engine";
+import { Element } from "@webgames/engine";
 
 export abstract class UiElement extends Element {
   static readonly fields: ElementFields<any> = {
-    text: stringField<UiElement>("text"),
-  } satisfies ElementFields<UiElement>;
-
-  abstract readonly uiType: UiElementType;
-  text: string = "";
+    text: {
+      get(element: UiElement): string {
+        return element.textContent ?? "";
+      },
+      set(element: UiElement, value: unknown): void {
+        if (typeof value !== "string") {
+          throw new Error('Field "text" must be a string.');
+        }
+        element.textContent = value;
+      },
+    } satisfies ElementField<UiElement>,
+  };
 
   getText(): string {
-    return this.text;
+    return this.textContent ?? "";
   }
 
   setText(text: string): void {
-    this.text = text;
+    this.textContent = text;
   }
 
   clearFrame(): void {}
-
-  abstract createDomNode(): UiDomNode;
 }

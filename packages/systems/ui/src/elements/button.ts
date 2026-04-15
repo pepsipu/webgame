@@ -1,14 +1,15 @@
-import type { UiDomNode } from "../dom-node";
 import { UiElement } from "./base";
 
 export class ButtonElement extends UiElement {
-  static readonly tag: string = "wg-button";
+  static readonly tag: string = "button";
 
-  readonly uiType = "button" as const;
   clicked: boolean = false;
 
-  markClicked(): void {
-    this.clicked = true;
+  constructor() {
+    super();
+    this.addEventListener("click", () => {
+      this.clicked = true;
+    });
   }
 
   override clearFrame(): void {
@@ -17,24 +18,5 @@ export class ButtonElement extends UiElement {
 
   wasClicked(): boolean {
     return this.clicked;
-  }
-
-  override createDomNode(): UiDomNode {
-    const button = document.createElement("button");
-    const onClick = (): void => {
-      this.markClicked();
-    };
-
-    button.type = "button";
-    button.dataset.webgamesUi = this.uiType;
-    button.addEventListener("click", onClick);
-
-    return {
-      element: button,
-      destroy() {
-        button.removeEventListener("click", onClick);
-        button.remove();
-      },
-    };
   }
 }

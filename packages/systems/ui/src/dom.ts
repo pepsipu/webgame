@@ -1,81 +1,36 @@
 import { type QueryRoot, selectElements } from "@webgames/engine";
-import type { UiDomNode } from "./dom-node";
 import { UiElement } from "./elements";
 
 export class UiOverlay {
-  readonly #nodes: Map<UiElement, UiDomNode>;
   readonly root: HTMLDivElement;
 
   constructor(root: HTMLDivElement) {
-    this.#nodes = new Map();
     this.root = root;
   }
 
   render(root: QueryRoot): void {
-    const used = new Set<UiElement>();
-    const children: HTMLElement[] = [];
-
-    for (const element of selectElements(
+    const elements = selectElements(
       root,
       (node): node is UiElement => node instanceof UiElement,
-    )) {
-      children.push(this.#syncElement(element, used));
-    }
+    );
 
     if (
-      children.length !== this.root.children.length ||
-      children.some((child, index) => this.root.children[index] !== child)
+      elements.length !== this.root.children.length ||
+      elements.some((el, index) => this.root.children[index] !== el)
     ) {
-      this.root.replaceChildren(...children);
-    }
-
-    for (const [element, node] of this.#nodes) {
-      if (used.has(element)) {
-        continue;
-      }
-
-      node.destroy();
-      this.#nodes.delete(element);
+      this.root.replaceChildren(...elements);
     }
   }
 
   clearFrame(): void {
-    for (const element of this.#nodes.keys()) {
-      element.clearFrame();
+    for (const child of Array.from(this.root.children)) {
+      if (child instanceof UiElement) {
+        child.clearFrame();
+      }
     }
   }
 
   destroy(): void {
-    for (const node of this.#nodes.values()) {
-      node.destroy();
-    }
-
-    this.#nodes.clear();
     this.root.replaceChildren();
-  }
-
-  #syncElement(element: UiElement, used: Set<UiElement>): HTMLElement {
-    used.add(element);
-
-    const node = this.#getOrCreateNode(element);
-
-    if (node.textContent !== element.text) {
-      node.textContent = element.text;
-    }
-
-    return node;
-  }
-
-  #getOrCreateNode(element: UiElement): HTMLElement {
-    const existing = this.#nodes.get(element);
-
-    if (existing !== undefined) {
-      return existing.element;
-    }
-
-    const node = element.createDomNode();
-
-    this.#nodes.set(element, node);
-    return node.element;
   }
 }

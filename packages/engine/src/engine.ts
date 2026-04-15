@@ -23,6 +23,12 @@ export class Engine {
     this.afterTickHandlers = [];
     this.destroyHandlers = [];
 
+    const container = nativeCreateElement.call(document, "div");
+    container.id = "replicated";
+    container.style.display = "none";
+    document.body.append(container);
+    (globalThis as any).replicatedContainer = container;
+
     this.#patchCreateElement();
 
     for (const system of systems) {
@@ -48,6 +54,9 @@ export class Engine {
     }
 
     this.#restoreCreateElement();
+
+    (globalThis as any).replicatedContainer?.remove();
+    delete (globalThis as any).replicatedContainer;
 
     for (const child of Array.from(document.body.children)) {
       if (child instanceof Element) {
