@@ -90,7 +90,7 @@ export class ElementRegistry {
   }
 
   getGameSnapshot(): ElementSnapshot {
-    const container = (globalThis as any).replicatedContainer as HTMLElement;
+    const container = (globalThis as any).gameContainer as HTMLElement;
     return {
       tag: "game",
       children: Array.from(container.children)
@@ -103,7 +103,7 @@ export class ElementRegistry {
   }
 
   loadGameSnapshot(snapshot: ElementSnapshot): void {
-    const container = (globalThis as any).replicatedContainer as HTMLElement;
+    const container = (globalThis as any).gameContainer as HTMLElement;
     this.#syncChildren(container, snapshot.children ?? []);
   }
 

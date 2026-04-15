@@ -1,23 +1,15 @@
 import type { EngineSystem } from "@webgames/engine";
-import { UiOverlay } from "./dom";
+import { UiSystem } from "./dom";
 import { ButtonElement } from "./elements/button";
 import { ParagraphElement } from "./elements/paragraph";
 
-export function createUiSystem(root: HTMLDivElement): EngineSystem {
-  const overlay = new UiOverlay(root);
+export const uiSystem: EngineSystem = {
+  install(engine) {
+    engine.registry.register(ButtonElement, ParagraphElement);
+    const ui = new UiSystem();
 
-  return {
-    install(engine) {
-      engine.registry.register(ButtonElement, ParagraphElement);
-      engine.tickHandlers.push((engine) => {
-        overlay.render(document);
-      });
-      engine.afterTickHandlers.push(() => {
-        overlay.clearFrame();
-      });
-      engine.destroyHandlers.push(() => {
-        overlay.destroy();
-      });
-    },
-  };
-}
+    engine.afterTickHandlers.push(() => {
+      ui.clearFrame();
+    });
+  },
+};

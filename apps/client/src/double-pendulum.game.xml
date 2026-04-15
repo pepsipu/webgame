@@ -139,7 +139,7 @@
         body: "dynamic",
       });
       
-      replicatedContainer.append(newBox);
+      gameContainer.append(newBox);
       spawnedBoxes += 1;
     }
 

@@ -4,7 +4,7 @@ import { serverNetworkSystem } from "@webgames/network-server";
 import { loadGameFile } from "@webgames/parser";
 import { createPhysicsSystem } from "@webgames/physics";
 import { ScriptSystem } from "@webgames/script";
-import { ButtonElement, ParagraphElement } from "@webgames/ui";
+import { uiSystem } from "@webgames/ui";
 import { createEditor } from "./editor";
 
 const app = document.querySelector<HTMLDivElement>("#app");
@@ -59,11 +59,12 @@ async function createServerEngine(text: string): Promise<Engine> {
     gameSystem,
     new ScriptSystem(),
     await createPhysicsSystem(),
+    uiSystem,
     serverNetworkSystem,
   ]);
 
   try {
-    engine.registry.register(ButtonElement, ParagraphElement);
+    (globalThis as any).gameContainer.style.display = "none";
     loadGameFile(engine, text);
     return engine;
   } catch (error) {

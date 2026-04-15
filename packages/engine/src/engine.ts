@@ -24,10 +24,9 @@ export class Engine {
     this.destroyHandlers = [];
 
     const container = nativeCreateElement.call(document, "div");
-    container.id = "replicated";
-    container.style.display = "none";
+    container.id = "game-container";
     document.body.append(container);
-    (globalThis as any).replicatedContainer = container;
+    (globalThis as any).gameContainer = container;
 
     this.#patchCreateElement();
 
@@ -55,8 +54,8 @@ export class Engine {
 
     this.#restoreCreateElement();
 
-    (globalThis as any).replicatedContainer?.remove();
-    delete (globalThis as any).replicatedContainer;
+    (globalThis as any).gameContainer?.remove();
+    delete (globalThis as any).gameContainer;
 
     for (const child of Array.from(document.body.children)) {
       if (child instanceof Element) {
