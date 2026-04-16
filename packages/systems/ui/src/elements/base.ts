@@ -14,6 +14,7 @@ export abstract class UiElement extends Element {
         element.textContent = value;
       },
     } satisfies ElementField<UiElement>,
+    // todo: could sync other fields such as styles
   };
 
   getText(): string {
