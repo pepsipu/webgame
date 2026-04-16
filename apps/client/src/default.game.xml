@@ -38,6 +38,8 @@
     const ball = document.querySelector("#ball");
     const status = document.querySelector("#status");
     const toggle = document.querySelector("#toggle");
+    status.style.color = "lightblue"; // status is a real browser dom element, which can be styled
+
     let cameraX = 0;
     let cameraZ = 4;
     const clients = new Map();
