@@ -1,5 +1,4 @@
 import { Element } from "./element";
-import { selectElements } from "./query";
 import type { ElementSnapshot } from "./snapshot";
 
 // stored before any patching, used by Element constructor and registry
@@ -93,49 +92,20 @@ export class ElementRegistry {
   getGameSnapshot(): ElementSnapshot {
     return {
       tag: "game",
-      children: selectElements(document, (el) => el.parent === null)
-        .filter((child) => this.#isReplicated(child))
+      children: Array.from(document.body.children)
+        .filter(
+          (child): child is Element =>
+            child instanceof Element && this.#isReplicated(child),
+        )
         .map((child) => this.getSnapshot(child)),
     };
   }
 
   loadGameSnapshot(snapshot: ElementSnapshot): void {
-    const snapshots = snapshot.children ?? [];
-    const children = selectElements(
-      document,
-      (el) => el.parent === null,
-    ).filter((child) => this.#isReplicated(child));
-
-    for (let index = 0; index < snapshots.length; index += 1) {
-      const snap = snapshots[index];
-      const child = children[index];
-
-      if (child === undefined) {
-        document.body.append(this.create(snap));
-        continue;
-      }
-
-      const childType = getElementType(child);
-
-      if (this.#requireTag(childType) !== snap.tag) {
-        const replacement = this.create(snap);
-        child.before(replacement);
-        child.remove();
-        continue;
-      }
-
-      this.#syncElement(child, childType, snap);
-    }
-
-    for (let index = snapshots.length; index < children.length; index += 1) {
-      children[index].remove();
-    }
+    this.#syncChildren(document.body, snapshot.children ?? []);
   }
 
-  #syncChildren(
-    parent: Element | HTMLElement,
-    snapshots: ElementSnapshot[],
-  ): void {
+  #syncChildren(parent: HTMLElement, snapshots: ElementSnapshot[]): void {
     const children = Array.from(parent.children).filter(
       (child): child is Element =>
         child instanceof Element && this.#isReplicated(child),
