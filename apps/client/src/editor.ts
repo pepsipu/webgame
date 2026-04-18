@@ -31,6 +31,7 @@ export function createEditor(onLoad: (text: string) => void): HTMLDivElement {
 
   const editor = document.createElement("div");
   editor.id = "editor";
+  editor.setAttribute("data-no-replicate", "");
 
   const tabsElement = document.createElement("div");
   tabsElement.id = "editor-tabs";

@@ -105,10 +105,7 @@ export class ElementRegistry {
     this.#syncChildren(document.body, snapshot.children ?? []);
   }
 
-  #syncChildren(
-    parent: Element | HTMLElement,
-    snapshots: ElementSnapshot[],
-  ): void {
+  #syncChildren(parent: HTMLElement, snapshots: ElementSnapshot[]): void {
     const children = Array.from(parent.children).filter(
       (child): child is Element =>
         child instanceof Element && this.#isReplicated(child),
@@ -159,6 +156,10 @@ export class ElementRegistry {
   }
 
   #isReplicated(element: Element): boolean {
+    if (element.closest("[data-no-replicate]") !== null) {
+      return false;
+    }
+
     const type = getElementType(element);
 
     this.#requireTag(type);

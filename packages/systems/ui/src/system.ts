@@ -1,23 +1,22 @@
 import type { EngineSystem } from "@webgames/engine";
-import { UiOverlay } from "./dom";
+import { selectElements } from "@webgames/engine";
 import { ButtonElement } from "./elements/button";
 import { ParagraphElement } from "./elements/paragraph";
+import { UiElement } from "./elements";
 
-export function createUiSystem(root: HTMLDivElement): EngineSystem {
-  const overlay = new UiOverlay(root);
+export const uiSystem: EngineSystem = {
+  install(engine) {
+    engine.registry.register(ButtonElement, ParagraphElement);
 
-  return {
-    install(engine) {
-      engine.registry.register(ButtonElement, ParagraphElement);
-      engine.tickHandlers.push((engine) => {
-        overlay.render(document);
-      });
-      engine.afterTickHandlers.push(() => {
-        overlay.clearFrame();
-      });
-      engine.destroyHandlers.push(() => {
-        overlay.destroy();
-      });
-    },
-  };
-}
+    // after an engine tick, we want to reset their state
+    // for example, a button should only be active for one frame after being clicked
+    engine.afterTickHandlers.push(() => {
+      for (const elem of selectElements(
+        document,
+        (el): el is UiElement => el instanceof UiElement,
+      )) {
+        elem.clearFrame();
+      }
+    });
+  },
+};

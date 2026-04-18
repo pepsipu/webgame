@@ -4,7 +4,7 @@ import { serverNetworkSystem } from "@webgames/network-server";
 import { loadGameFile } from "@webgames/parser";
 import { createPhysicsSystem } from "@webgames/physics";
 import { ScriptSystem } from "@webgames/script";
-import { ButtonElement, ParagraphElement } from "@webgames/ui";
+import { uiSystem } from "@webgames/ui";
 import { createEditor } from "./editor";
 
 const app = document.querySelector<HTMLDivElement>("#app");
@@ -12,6 +12,14 @@ const app = document.querySelector<HTMLDivElement>("#app");
 if (app === null) {
   throw new Error("App element not found");
 }
+
+// On the server tab, only the editor should render. Hide any other direct
+// children of body (notably game elements added by the parser/snapshots).
+app.setAttribute("data-no-replicate", "");
+const hideStyle = document.createElement("style");
+hideStyle.textContent =
+  "body > :not([data-no-replicate]) { display: none !important; }";
+document.head.append(hideStyle);
 
 let engine: Engine | null = null;
 let reloadTimer: ReturnType<typeof setTimeout> | null = null;
@@ -27,9 +35,8 @@ const editor = createEditor((text) => {
   }, 300);
 });
 
-editor.style.position = "static";
-editor.style.width = "100%";
-editor.style.height = "100%";
+editor.style.position = "fixed";
+editor.style.inset = "0";
 
 app.append(editor);
 
@@ -59,11 +66,11 @@ async function createServerEngine(text: string): Promise<Engine> {
     gameSystem,
     new ScriptSystem(),
     await createPhysicsSystem(),
+    uiSystem,
     serverNetworkSystem,
   ]);
 
   try {
-    engine.registry.register(ButtonElement, ParagraphElement);
     loadGameFile(engine, text);
     return engine;
   } catch (error) {

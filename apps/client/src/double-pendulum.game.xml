@@ -63,11 +63,11 @@
     anchor2="0 0.75 0"
   />
 
-  <wg-button id="spawn-box">Spawn box</wg-button>
-  <wg-button id="boost-cubes">Boost cubes</wg-button>
+  <button id="spawn-box">Spawn box</button>
+  <button id="boost-cubes">Boost cubes</button>
 
   <script>
-    const input = document.querySelector("wg-input");
+    const input = document.querySelector("input-service");
     const network = document.querySelector("network");
     const lowerLink = document.querySelector("#lower-link");
     const spawnBox = document.querySelector("#spawn-box");
