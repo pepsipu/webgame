@@ -101,9 +101,10 @@ export class ElementRegistry {
 
   loadGameSnapshot(snapshot: ElementSnapshot): void {
     const snapshots = snapshot.children ?? [];
-    const children = selectElements(document, (el) => el.parent === null).filter(
-      (child) => this.#isReplicated(child),
-    );
+    const children = selectElements(
+      document,
+      (el) => el.parent === null,
+    ).filter((child) => this.#isReplicated(child));
 
     for (let index = 0; index < snapshots.length; index += 1) {
       const snap = snapshots[index];
