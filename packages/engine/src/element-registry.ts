@@ -1,4 +1,5 @@
 import { Element } from "./element";
+import { selectElements } from "./query";
 import type { ElementSnapshot } from "./snapshot";
 
 // stored before any patching, used by Element constructor and registry
@@ -90,21 +91,44 @@ export class ElementRegistry {
   }
 
   getGameSnapshot(): ElementSnapshot {
-    const container = (globalThis as any).gameContainer as HTMLElement;
     return {
       tag: "game",
-      children: Array.from(container.children)
-        .filter(
-          (child): child is Element =>
-            child instanceof Element && this.#isReplicated(child),
-        )
+      children: selectElements(document, (el) => el.parent === null)
+        .filter((child) => this.#isReplicated(child))
         .map((child) => this.getSnapshot(child)),
     };
   }
 
   loadGameSnapshot(snapshot: ElementSnapshot): void {
-    const container = (globalThis as any).gameContainer as HTMLElement;
-    this.#syncChildren(container, snapshot.children ?? []);
+    const snapshots = snapshot.children ?? [];
+    const children = selectElements(document, (el) => el.parent === null).filter(
+      (child) => this.#isReplicated(child),
+    );
+
+    for (let index = 0; index < snapshots.length; index += 1) {
+      const snap = snapshots[index];
+      const child = children[index];
+
+      if (child === undefined) {
+        document.body.append(this.create(snap));
+        continue;
+      }
+
+      const childType = getElementType(child);
+
+      if (this.#requireTag(childType) !== snap.tag) {
+        const replacement = this.create(snap);
+        child.before(replacement);
+        child.remove();
+        continue;
+      }
+
+      this.#syncElement(child, childType, snap);
+    }
+
+    for (let index = snapshots.length; index < children.length; index += 1) {
+      children[index].remove();
+    }
   }
 
   #syncChildren(
@@ -161,6 +185,10 @@ export class ElementRegistry {
   }
 
   #isReplicated(element: Element): boolean {
+    if (element.closest("[data-no-replicate]") !== null) {
+      return false;
+    }
+
     const type = getElementType(element);
 
     this.#requireTag(type);

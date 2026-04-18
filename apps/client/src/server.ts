@@ -13,6 +13,14 @@ if (app === null) {
   throw new Error("App element not found");
 }
 
+// On the server tab, only the editor should render. Hide any other direct
+// children of body (notably game elements added by the parser/snapshots).
+app.setAttribute("data-no-replicate", "");
+const hideStyle = document.createElement("style");
+hideStyle.textContent =
+  "body > :not([data-no-replicate]) { display: none !important; }";
+document.head.append(hideStyle);
+
 let engine: Engine | null = null;
 let reloadTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -27,9 +35,8 @@ const editor = createEditor((text) => {
   }, 300);
 });
 
-editor.style.position = "static";
-editor.style.width = "100%";
-editor.style.height = "100%";
+editor.style.position = "fixed";
+editor.style.inset = "0";
 
 app.append(editor);
 
@@ -64,7 +71,6 @@ async function createServerEngine(text: string): Promise<Engine> {
   ]);
 
   try {
-    (globalThis as any).gameContainer.style.display = "none";
     loadGameFile(engine, text);
     return engine;
   } catch (error) {

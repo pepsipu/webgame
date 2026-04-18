@@ -23,11 +23,6 @@ export class Engine {
     this.afterTickHandlers = [];
     this.destroyHandlers = [];
 
-    const container = nativeCreateElement.call(document, "div");
-    container.id = "game-container";
-    document.body.append(container);
-    (globalThis as any).gameContainer = container;
-
     this.#patchCreateElement();
 
     for (const system of systems) {
@@ -53,9 +48,6 @@ export class Engine {
     }
 
     this.#restoreCreateElement();
-
-    (globalThis as any).gameContainer?.remove();
-    delete (globalThis as any).gameContainer;
 
     for (const child of Array.from(document.body.children)) {
       if (child instanceof Element) {
