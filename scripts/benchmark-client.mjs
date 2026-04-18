@@ -55,6 +55,28 @@ try {
   });
 
   try {
+    // The game engine runs in a browser tab at /server.html, which connects
+    // to the Node.js relay as the host. Without this, clients never receive
+    // any snapshots. Open it before the client page so it's ready to host.
+    const serverPage = await context.newPage();
+
+    serverPage.on("console", (message) => {
+      if (message.type() === "error") {
+        console.error("[server tab]", message.text());
+      }
+    });
+    serverPage.on("pageerror", (error) => {
+      console.error("[server tab]", error);
+    });
+
+    await serverPage.addInitScript(() => {
+      localStorage.setItem(
+        "webgames.editor",
+        JSON.stringify({ activeTabIndex: 0, tabs: [] }),
+      );
+    });
+    await serverPage.goto(`${previewUrl}/server.html`, { waitUntil: "load" });
+
     const page = await context.newPage();
     const session = await context.newCDPSession(page);
     const firstSnapshot = waitForWebSocketFrame(session);
