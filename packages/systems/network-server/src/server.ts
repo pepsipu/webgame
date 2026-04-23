@@ -7,69 +7,111 @@ type ServerNetworkEvent = {
   clientId: string;
 };
 
-type RelayMessage = {
-  type: "event" | "connect" | "disconnect";
-  clientId: string;
-  name?: string;
-  data?: unknown;
+type RelayMessage =
+  | {
+      type: "message";
+      clientId: string;
+      data: unknown;
+    }
+  | {
+      type: "connect" | "disconnect";
+      clientId: string;
+    };
+
+type RelayEventData = {
+  name: string;
+  data: unknown;
 };
 
 export class ServerNetworkServiceElement extends Element {
   static readonly tag: string = "network";
   static readonly replicated: boolean = false;
 
-  private isDestroyed: boolean = false;
-  private socket: WebSocket;
-  private readonly incomingEvents: ServerNetworkEvent[] = [];
+  #destroyed: boolean;
+  #socket: WebSocket;
+  #incomingEvents: ServerNetworkEvent[] = [];
 
   constructor() {
     super();
-    this.socket = this.connect();
+    this.#destroyed = false;
+    this.#socket = this.#connect();
   }
 
   pollEvent(): ServerNetworkEvent | undefined {
-    return this.incomingEvents.shift();
+    return this.#incomingEvents.shift();
   }
 
   broadcastSnapshot(registry: ElementRegistry): void {
-    if (this.socket.readyState === WebSocket.OPEN) {
-      this.socket.send(JSON.stringify(registry.getGameSnapshot()));
+    if (this.#socket.readyState === WebSocket.OPEN) {
+      this.#socket.send(JSON.stringify(registry.getGameSnapshot()));
     }
   }
 
   destroy(): void {
-    this.isDestroyed = true;
-    this.socket.close();
+    this.#destroyed = true;
+    this.#socket.close();
   }
 
-  private connect(): WebSocket {
+  #connect(): WebSocket {
     const protocol = location.protocol === "https:" ? "wss:" : "ws:";
     const socket = new WebSocket(`${protocol}//${location.host}/ws?role=host`);
 
     socket.addEventListener("message", (event) => {
       const message = JSON.parse(String(event.data)) as RelayMessage;
 
-      this.incomingEvents.push({
+      if (message.type === "message") {
+        const relayEvent = this.#parseRelayEventData(message.data);
+
+        if (relayEvent === null) {
+          return;
+        }
+
+        this.#incomingEvents.push({
+          clientId: message.clientId,
+          name: relayEvent.name,
+          data: relayEvent.data,
+        });
+        return;
+      }
+
+      this.#incomingEvents.push({
         clientId: message.clientId,
-        name: message.type === "event" ? message.name! : message.type,
-        data: message.type === "event" ? message.data : null,
+        name: message.type,
+        data: null,
       });
     });
 
     socket.addEventListener("close", () => {
-      if (this.isDestroyed) {
+      if (this.#destroyed) {
         return;
       }
 
       window.setTimeout(() => {
-        if (this.isDestroyed) {
+        if (this.#destroyed) {
           return;
         }
 
-        this.socket = this.connect();
+        this.#socket = this.#connect();
       }, 100);
     });
 
     return socket;
+  }
+
+  #parseRelayEventData(data: unknown): RelayEventData | null {
+    if (typeof data !== "object" || data === null) {
+      return null;
+    }
+
+    const relayEvent = data as Partial<RelayEventData>;
+
+    if (typeof relayEvent.name !== "string") {
+      return null;
+    }
+
+    return {
+      name: relayEvent.name,
+      data: relayEvent.data,
+    };
   }
 }

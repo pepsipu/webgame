@@ -22,17 +22,9 @@ hideStyle.textContent =
 document.head.append(hideStyle);
 
 let engine: Engine | null = null;
-let reloadTimer: ReturnType<typeof setTimeout> | null = null;
 
 const editor = createEditor((text) => {
-  if (reloadTimer !== null) {
-    clearTimeout(reloadTimer);
-  }
-
-  reloadTimer = setTimeout(() => {
-    reloadTimer = null;
-    reloadEngine(text);
-  }, 300);
+  void reloadEngine(text);
 });
 
 editor.style.position = "fixed";

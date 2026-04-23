@@ -7,6 +7,11 @@ const port = Number(process.env.PORT ?? 8787);
 const app = new Hono();
 const server = createServer(getRequestListener(app.fetch));
 
+type ClientEvent = {
+  name: string;
+  data: unknown;
+};
+
 // websocket relay
 let host: WebSocket | null = null;
 let latestSnapshot: string | null = null;
@@ -50,8 +55,13 @@ wss.on("connection", (socket, req) => {
     }
 
     socket.on("message", (data) => {
-      const event = JSON.parse(data.toString()) as Record<string, unknown>;
-      host?.send(JSON.stringify({ type: "event", clientId, ...event }));
+      const event = parseClientEvent(data.toString());
+
+      if (event === null) {
+        return;
+      }
+
+      host?.send(JSON.stringify({ type: "message", clientId, data: event }));
     });
 
     socket.on("close", () => {
@@ -64,3 +74,20 @@ wss.on("connection", (socket, req) => {
 server.listen(port, () => {
   console.log(`Server listening on http://127.0.0.1:${port}`);
 });
+
+function parseClientEvent(raw: string): ClientEvent | null {
+  try {
+    const event = JSON.parse(raw) as Partial<ClientEvent>;
+
+    if (typeof event.name !== "string") {
+      return null;
+    }
+
+    return {
+      name: event.name,
+      data: event.data,
+    };
+  } catch {
+    return null;
+  }
+}
