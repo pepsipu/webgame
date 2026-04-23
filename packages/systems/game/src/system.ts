@@ -5,7 +5,11 @@ import { CameraElement } from "./components/camera";
 import { TransformElement } from "./components/transform";
 import { TubeElement } from "./components/tube";
 
-export const shapeElements: ElementType[] = [BoxElement, TubeElement, BallElement];
+export const shapeElements: ElementType[] = [
+  BoxElement,
+  TubeElement,
+  BallElement,
+];
 
 export const gameSystem: EngineSystem = {
   install(engine) {

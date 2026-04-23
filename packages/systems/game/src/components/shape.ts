@@ -17,7 +17,9 @@ export abstract class ShapeElement extends TransformElement {
   }
 
   get material(): Material {
-    return Vector3.create(...parseVector3Attribute(this.element, "color", [1, 1, 1]));
+    return Vector3.create(
+      ...parseVector3Attribute(this.element, "color", [1, 1, 1]),
+    );
   }
 
   set material(value: Material) {

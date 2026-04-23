@@ -12,7 +12,9 @@ export interface PhysicsScene {
 export function collectPhysicsScene(root: QueryRoot): PhysicsScene {
   const bodies = new Set<ShapeElement>();
   for (const type of shapeElements) {
-    for (const element of document.querySelectorAll(type.tag) as NodeListOf<ShapeElement>) {
+    for (const element of document.querySelectorAll(
+      type.tag,
+    ) as NodeListOf<ShapeElement>) {
       if (getShapePhysicsBody(element) === "none") {
         continue;
       }
@@ -39,7 +41,9 @@ export function collectPhysicsScene(root: QueryRoot): PhysicsScene {
     bodies,
     bodiesById,
     joints: new Set(
-      document.querySelectorAll(SphericalJointElement.tag) as NodeListOf<SphericalJointElement>,
+      document.querySelectorAll(
+        SphericalJointElement.tag,
+      ) as NodeListOf<SphericalJointElement>,
     ),
   };
 

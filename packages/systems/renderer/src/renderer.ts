@@ -4,7 +4,15 @@ import {
   selectElement,
   selectElements,
 } from "@webgames/engine";
-import { BallElement, BoxElement, CameraElement, ShapeElement, shapeElements, Transform, TubeElement } from "@webgames/game";
+import {
+  BallElement,
+  BoxElement,
+  CameraElement,
+  ShapeElement,
+  shapeElements,
+  Transform,
+  TubeElement,
+} from "@webgames/game";
 import { createDrawState, type DrawState, setDrawState } from "./draw-state";
 import {
   createElementGpuResources,
@@ -205,7 +213,9 @@ export class Renderer {
     // todo: ugly solution for querying all shape elements
     // need a way to get list of all shape elements without this tight binding
     for (const type of shapeElements) {
-      for (const element of document.querySelectorAll(type.tag) as NodeListOf<ShapeElement>) {
+      for (const element of document.querySelectorAll(
+        type.tag,
+      ) as NodeListOf<ShapeElement>) {
         liveElements.add(element);
         this.#drawShapeElement(renderPass, element);
       }

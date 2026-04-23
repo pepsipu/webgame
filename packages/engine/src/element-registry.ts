@@ -23,9 +23,7 @@ export function resolveElementTypeForElement(
   return activeElementRegistry?.getTypeForElement(element);
 }
 
-export function createElementHelper(
-  element: HTMLElement,
-): object | null {
+export function createElementHelper(element: HTMLElement): object | null {
   return activeElementRegistry?.createHelper(element) ?? null;
 }
 
@@ -148,10 +146,7 @@ export class ElementRegistry {
     }
   }
 
-  #syncElement(
-    element: HTMLElement,
-    snapshot: ElementSnapshot,
-  ): void {
+  #syncElement(element: HTMLElement, snapshot: ElementSnapshot): void {
     setAttributesFromSnapshot(element, snapshot.attributes);
     setTextFromSnapshot(element, snapshot.text);
 

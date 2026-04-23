@@ -220,7 +220,11 @@ export class Transform {
       sourceScaleZ / parentScaleZ,
     );
 
-    element.setPosition(output.position[0], output.position[1], output.position[2]);
+    element.setPosition(
+      output.position[0],
+      output.position[1],
+      output.position[2],
+    );
     element.setRotation(
       output.rotation[0],
       output.rotation[1],

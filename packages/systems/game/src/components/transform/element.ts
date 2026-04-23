@@ -14,7 +14,12 @@ export class TransformElement extends Element {
   }
 
   get position(): Vector3 {
-    return Vector3.create(...parseVector3String(this.getAttribute("position") ?? "0 0 0", "position"));
+    return Vector3.create(
+      ...parseVector3String(
+        this.getAttribute("position") ?? "0 0 0",
+        "position",
+      ),
+    );
   }
 
   set position(value: readonly number[]) {
@@ -42,7 +47,12 @@ export class TransformElement extends Element {
     if (parsed.length === 3 && parsed.every((entry) => !Number.isNaN(entry))) {
       const transform = Transform.create();
 
-      Transform.setRotationFromEuler(transform, parsed[0], parsed[1], parsed[2]);
+      Transform.setRotationFromEuler(
+        transform,
+        parsed[0],
+        parsed[1],
+        parsed[2],
+      );
       return Quaternion.clone(transform.rotation);
     }
 
@@ -57,11 +67,16 @@ export class TransformElement extends Element {
       throw new Error('Property "rotation" must be a quaternion.');
     }
 
-    this.setAttribute("rotation", `${value[0]} ${value[1]} ${value[2]} ${value[3]}`);
+    this.setAttribute(
+      "rotation",
+      `${value[0]} ${value[1]} ${value[2]} ${value[3]}`,
+    );
   }
 
   get scale(): Vector3 {
-    return Vector3.create(...parseVector3String(this.getAttribute("scale") ?? "1 1 1", "scale"));
+    return Vector3.create(
+      ...parseVector3String(this.getAttribute("scale") ?? "1 1 1", "scale"),
+    );
   }
 
   set scale(value: readonly number[]) {

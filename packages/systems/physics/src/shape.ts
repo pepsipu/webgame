@@ -153,7 +153,8 @@ function requireBodyType(value: unknown): PhysicsBodyType {
 }
 
 function getElementNode(element: ShapeElement): HTMLElement {
-  const helperElement = (element as unknown as { element?: HTMLElement }).element;
+  const helperElement = (element as unknown as { element?: HTMLElement })
+    .element;
 
   return helperElement instanceof HTMLElement
     ? helperElement

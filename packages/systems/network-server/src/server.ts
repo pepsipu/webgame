@@ -33,7 +33,7 @@ const stateByElement = new WeakMap<HTMLElement, ServerState>();
 export class ServerNetworkServiceElement extends Element {
   static readonly tag: string = "network";
   static readonly replicated: boolean = false;
-  
+
   pollEvent(): ServerNetworkEvent | undefined {
     return getState(this.element, () => this.#connect()).incomingEvents.shift();
   }
