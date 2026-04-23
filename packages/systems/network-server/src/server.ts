@@ -27,13 +27,11 @@ export class ServerNetworkServiceElement extends Element {
   static readonly tag: string = "network";
   static readonly replicated: boolean = false;
 
-  #destroyed: boolean;
   #socket: WebSocket;
   #incomingEvents: ServerNetworkEvent[] = [];
 
   constructor() {
     super();
-    this.#destroyed = false;
     this.#socket = this.#connect();
   }
 
@@ -48,7 +46,6 @@ export class ServerNetworkServiceElement extends Element {
   }
 
   destroy(): void {
-    this.#destroyed = true;
     this.#socket.close();
   }
 
@@ -79,20 +76,6 @@ export class ServerNetworkServiceElement extends Element {
         name: message.type,
         data: null,
       });
-    });
-
-    socket.addEventListener("close", () => {
-      if (this.#destroyed) {
-        return;
-      }
-
-      window.setTimeout(() => {
-        if (this.#destroyed) {
-          return;
-        }
-
-        this.#socket = this.#connect();
-      }, 100);
     });
 
     return socket;

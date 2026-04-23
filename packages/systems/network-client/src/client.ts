@@ -62,13 +62,6 @@ export class ClientNetworkServiceElement extends Element {
         class: [],
         children: [],
       };
-      window.setTimeout(() => {
-        if (this.#destroyed) {
-          return;
-        }
-
-        this.socket = this.#createSocket();
-      }, 100);
     });
 
     return socket;
