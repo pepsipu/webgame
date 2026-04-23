@@ -38,7 +38,7 @@ requestAnimationFrame(function frame(time) {
   const deltaTime = previousSeconds === 0 ? 0 : seconds - previousSeconds;
   previousSeconds = seconds;
 
-  engine?.tick(deltaTime);
+  engine?.tick(Math.min(deltaTime, 0.1)); // cap deltaTime to avoid physics instability when tab inactive
   requestAnimationFrame(frame);
 });
 

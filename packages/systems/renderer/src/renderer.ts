@@ -1,6 +1,4 @@
-import {
-  type Element
-} from "@webgames/engine";
+import { type Element } from "@webgames/engine";
 import {
   BallElement,
   BoxElement,
