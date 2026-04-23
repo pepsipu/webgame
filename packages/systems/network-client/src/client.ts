@@ -5,69 +5,69 @@ export class ClientNetworkServiceElement extends Element {
   static readonly tag: string = "network";
   static readonly replicated: boolean = false;
 
-  destroyed: boolean;
-  pendingSnapshot?: ElementSnapshot;
-  socket: WebSocket;
+  #destroyed: boolean;
+  #pendingSnapshot?: ElementSnapshot;
+  #socket: WebSocket;
 
   constructor() {
     super();
-    this.destroyed = false;
-    this.socket = this.createSocket();
+    this.#destroyed = false;
+    this.#socket = this.#createSocket();
   }
 
   emit(name: string, data: unknown): void {
-    if (this.socket.readyState !== WebSocket.OPEN) {
+    if (this.#socket.readyState !== WebSocket.OPEN) {
       return;
     }
 
-    this.socket.send(JSON.stringify({ name, data }));
+    this.#socket.send(JSON.stringify({ name, data }));
   }
 
   applyPendingSnapshot(registry: ElementRegistry): void {
-    if (this.pendingSnapshot === undefined) {
+    if (this.#pendingSnapshot === undefined) {
       return;
     }
 
-    const snapshot = this.pendingSnapshot;
+    const snapshot = this.#pendingSnapshot;
 
-    this.pendingSnapshot = undefined;
+    this.#pendingSnapshot = undefined;
     registry.loadGameSnapshot(snapshot);
   }
 
   destroy(): void {
-    this.destroyed = true;
-    this.socket.close();
+    this.#destroyed = true;
+    this.#socket.close();
   }
 
-  private getWebSocketUrl(): string {
+  #getWebSocketUrl(): string {
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
 
     return `${protocol}//${window.location.host}/ws`;
   }
 
-  private createSocket(): WebSocket {
-    const socket = new WebSocket(this.getWebSocketUrl());
+  #createSocket(): WebSocket {
+    const socket = new WebSocket(this.#getWebSocketUrl());
 
     socket.addEventListener("message", (event) => {
-      this.pendingSnapshot = JSON.parse(String(event.data)) as ElementSnapshot;
+      this.#pendingSnapshot = JSON.parse(String(event.data)) as ElementSnapshot;
     });
     socket.addEventListener("close", () => {
-      if (this.destroyed) {
+      if (this.#destroyed) {
         return;
       }
 
-      this.pendingSnapshot = {
+      this.#pendingSnapshot = {
         tag: "game",
         id: null,
         class: [],
         children: [],
       };
       window.setTimeout(() => {
-        if (this.destroyed) {
+        if (this.#destroyed) {
           return;
         }
 
-        this.socket = this.createSocket();
+        this.#socket = this.#createSocket();
       }, 100);
     });
 

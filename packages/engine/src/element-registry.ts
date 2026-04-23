@@ -59,7 +59,7 @@ export class ElementRegistry {
     const tag = this.#requireTag(type);
     const snapshot: ElementSnapshot = {
       tag,
-      id: element.id || null,
+      id: element.id,
       class: [...element.classes],
       children: Array.from(element.children)
         .filter(
