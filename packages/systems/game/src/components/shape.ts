@@ -10,27 +10,27 @@ export abstract class ShapeElement extends TransformElement {
   } satisfies ElementFields<ShapeElement>;
 
   material: Material;
-  #cachedMesh: Mesh | null;
-  #cachedMeshKey: string | null;
+  #mesh: Mesh | null;
+  #meshKey: string | null;
 
   constructor() {
     super();
     this.material = Vector3.create(1, 1, 1);
-    this.#cachedMesh = null;
-    this.#cachedMeshKey = null;
+    this.#mesh = null;
+    this.#meshKey = null;
   }
 
   get mesh(): Mesh {
     const meshKey = this.getMeshKey();
 
-    if (this.#cachedMesh !== null && this.#cachedMeshKey === meshKey) {
-      return this.#cachedMesh;
+    if (this.#mesh !== null && this.#meshKey === meshKey) {
+      return this.#mesh;
     }
 
     const mesh = this.createMesh();
 
-    this.#cachedMesh = mesh;
-    this.#cachedMeshKey = meshKey;
+    this.#mesh = mesh;
+    this.#meshKey = meshKey;
     return mesh;
   }
 
