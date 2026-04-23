@@ -1,4 +1,3 @@
-import { type QueryRoot, selectElements } from "@webgames/engine";
 import { ShapeElement, shapeElements } from "@webgames/game";
 import { SphericalJointElement } from "./joint";
 import { getShapePhysicsBody } from "./shape";
@@ -9,7 +8,7 @@ export interface PhysicsScene {
   joints: Set<SphericalJointElement>;
 }
 
-export function collectPhysicsScene(root: QueryRoot): PhysicsScene {
+export function collectPhysicsScene(): PhysicsScene {
   const bodies = new Set<ShapeElement>();
   for (const type of shapeElements) {
     for (const element of Array.from(

@@ -1,5 +1,4 @@
 import type { ElementType, EngineSystem } from "@webgames/engine";
-import { selectElements } from "@webgames/engine";
 import { ButtonElement } from "./elements/button";
 import { ParagraphElement } from "./elements/paragraph";
 import { UiElement } from "./elements";

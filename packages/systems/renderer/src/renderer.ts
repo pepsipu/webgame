@@ -1,8 +1,5 @@
 import {
-  type Element,
-  type QueryRoot,
-  selectElement,
-  selectElements,
+  type Element
 } from "@webgames/engine";
 import {
   BallElement,

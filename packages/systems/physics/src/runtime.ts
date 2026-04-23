@@ -33,7 +33,7 @@ export class PhysicsRuntime {
   }
 
   tick(engine: Engine, deltaTime: number): void {
-    const scene = collectPhysicsScene(document);
+    const scene = collectPhysicsScene();
 
     this.syncBodies(scene.bodies);
     this.syncJoints(scene.bodiesById, scene.joints);
