@@ -6,6 +6,17 @@ const listenerInstalled = new WeakSet<HTMLElement>();
 export class ButtonElement extends UiElement {
   static readonly tag: string = "button";
 
+  constructor(element: HTMLElement) {
+    super(element);
+
+    if (!listenerInstalled.has(this.element)) {
+      this.element.addEventListener("click", () => {
+        clickedByElement.set(this.element, true);
+      });
+      listenerInstalled.add(this.element);
+    }
+  }
+
   get clicked(): boolean {
     return clickedByElement.get(this.element) ?? false;
   }
@@ -15,13 +26,6 @@ export class ButtonElement extends UiElement {
   }
 
   override clearFrame(): void {
-    if (!listenerInstalled.has(this.element)) {
-      this.element.addEventListener("click", () => {
-        clickedByElement.set(this.element, true);
-      });
-      listenerInstalled.add(this.element);
-    }
-
     this.clicked = false;
   }
 

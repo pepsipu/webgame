@@ -67,7 +67,7 @@ export class ElementRegistry {
   }
 
   create(snapshot: ElementSnapshot): HTMLElement {
-    const element = nativeCreateElement.call(document, snapshot.tag);
+    const element = nativeCreateElement.call(document, normalizeTag(snapshot.tag));
 
     this.#syncElement(element, snapshot);
     return element;
@@ -75,7 +75,7 @@ export class ElementRegistry {
 
   getSnapshot(element: HTMLElement): ElementSnapshot {
     const snapshot: ElementSnapshot = {
-      tag: element.tagName,
+      tag: normalizeTag(element.tagName),
       attributes: getAttributesSnapshot(element),
       text: getTextSnapshot(element),
       children: Array.from(element.children)
@@ -90,7 +90,7 @@ export class ElementRegistry {
   }
 
   applySnapshot(element: HTMLElement, snapshot: ElementSnapshot): void {
-    if (element.tagName !== snapshot.tag) {
+    if (normalizeTag(element.tagName) !== normalizeTag(snapshot.tag)) {
       throw new Error(
         `Cannot apply <${snapshot.tag}> snapshot to <${element.tagName}>.`,
       );
@@ -130,7 +130,7 @@ export class ElementRegistry {
         continue;
       }
 
-      if (child.tagName !== snapshot.tag) {
+      if (normalizeTag(child.tagName) !== normalizeTag(snapshot.tag)) {
         const replacement = this.create(snapshot);
 
         child.before(replacement);
@@ -148,6 +148,7 @@ export class ElementRegistry {
 
   #syncElement(element: HTMLElement, snapshot: ElementSnapshot): void {
     setAttributesFromSnapshot(element, snapshot.attributes);
+    ensureInertScriptType(element);
     setTextFromSnapshot(element, snapshot.text);
 
     this.#syncChildren(element, snapshot.children ?? []);
@@ -180,6 +181,10 @@ export class ElementRegistry {
 
 function getOwnTag(type: ElementType): string | undefined {
   return Object.hasOwn(type, "tag") ? type.tag : undefined;
+}
+
+function normalizeTag(tag: string): string {
+  return tag.toLowerCase();
 }
 
 function getAttributesSnapshot(element: HTMLElement): Record<string, string> {
@@ -237,4 +242,16 @@ function setTextFromSnapshot(
   }
 
   element.prepend(document.createTextNode(text));
+}
+
+function ensureInertScriptType(element: HTMLElement): void {
+  if (normalizeTag(element.tagName) !== "script") {
+    return;
+  }
+
+  // prevent scripts from getting reexecuted during snapshot application
+  // todo: really need a better solution for this
+  if (element.getAttribute("type") === null) {
+    element.setAttribute("type", "application/webgames-script");
+  }
 }

@@ -1,8 +1,4 @@
-import {
-  type Engine,
-  type EngineSystem,
-  selectElements,
-} from "@webgames/engine";
+import { type Engine, type EngineSystem } from "@webgames/engine";
 import { ScriptElement } from "./element";
 import { ScriptState } from "./runtime";
 
@@ -29,9 +25,11 @@ export class ScriptSystem implements EngineSystem {
 
   private syncScripts(engine: Engine): void {
     const active = new Set(
-      selectElements(document, (element): element is ScriptElement => {
-        return element instanceof ScriptElement;
-      }),
+      Array.from(
+        document.querySelectorAll(
+          'script[type="application/webgames-script"]',
+        ) as NodeListOf<ScriptElement>,
+      ),
     );
 
     for (const element of active) {

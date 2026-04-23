@@ -14,9 +14,9 @@ export const uiSystem: EngineSystem = {
     // for example, a button should only be active for one frame after being clicked
     engine.afterTickHandlers.push(() => {
       for (const type of uiElements) {
-        for (const element of document.querySelectorAll(
-          type.tag,
-        ) as NodeListOf<UiElement>) {
+        for (const element of Array.from(
+          document.querySelectorAll(type.tag) as NodeListOf<UiElement>,
+        )) {
           element.clearFrame();
         }
       }

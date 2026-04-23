@@ -25,8 +25,6 @@ export class ClientNetworkServiceElement extends Element {
       return;
     }
 
-    console.log(`Emitting event "${name}" with data:`, data);
-
     state.socket.send(JSON.stringify({ name, data }));
   }
 

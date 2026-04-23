@@ -12,11 +12,6 @@ export class InputServiceElement extends Element {
   static readonly tag: string = "input-service";
   static readonly replicated: boolean = false;
 
-  constructor(element: HTMLElement) {
-    super(element);
-    getState(this.element);
-  }
-
   isDown(code: string): boolean {
     return getState(this.element).down.has(code);
   }

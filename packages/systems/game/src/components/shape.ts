@@ -41,9 +41,12 @@ export abstract class ShapeElement extends TransformElement {
   }
 
   setColor(r: number, g: number, b: number): void {
-    this.material[0] = r;
-    this.material[1] = g;
-    this.material[2] = b;
+    // this.material[0] = r;
+    // this.material[1] = g;
+    // this.material[2] = b;
+    this.material = [r, g, b];
+    // todo: unfortunate solution because writes to this.material array
+    // does not update the dom element's state
   }
 
   protected abstract createMesh(): Mesh;
