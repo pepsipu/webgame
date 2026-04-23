@@ -12,6 +12,8 @@ if (app === null) {
   throw new Error("App element not found");
 }
 
+app.setAttribute("data-no-replicate", "");
+
 const canvas = document.createElement("canvas");
 canvas.id = "canvas";
 

@@ -4,7 +4,9 @@ import { InputServiceElement } from "./service";
 export const inputSystem: EngineSystem = {
   install(engine) {
     engine.registry.register(InputServiceElement);
-    const inputService = new InputServiceElement();
+    const inputService = document.createElement(
+      InputServiceElement.tag,
+    ) as unknown as InputServiceElement;
     document.body.append(inputService);
 
     const onKeyDown = (event: KeyboardEvent): void => {

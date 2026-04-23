@@ -131,6 +131,7 @@ export class Transform {
 
   static setWorld(element: TransformElement, source: Transform): void {
     const parentTransform = Transform.create();
+    const output = Transform.create();
 
     for (let parent = element.parent; parent !== null; parent = parent.parent) {
       if (parent instanceof TransformElement) {
@@ -186,14 +187,14 @@ export class Transform {
       (inverseRotationX * inverseOffsetY - inverseRotationY * inverseOffsetX);
 
     Vector3.set(
-      element.transform.position,
+      output.position,
       localPositionX / parentScaleX,
       localPositionY / parentScaleY,
       localPositionZ / parentScaleZ,
     );
 
     Quaternion.set(
-      element.transform.rotation,
+      output.rotation,
       parentRotationW * sourceRotationX +
         inverseRotationX * sourceRotationW +
         inverseRotationY * sourceRotationZ -
@@ -213,11 +214,20 @@ export class Transform {
     );
 
     Vector3.set(
-      element.transform.scale,
+      output.scale,
       sourceScaleX / parentScaleX,
       sourceScaleY / parentScaleY,
       sourceScaleZ / parentScaleZ,
     );
+
+    element.setPosition(output.position[0], output.position[1], output.position[2]);
+    element.setRotation(
+      output.rotation[0],
+      output.rotation[1],
+      output.rotation[2],
+      output.rotation[3],
+    );
+    element.setScale(output.scale[0], output.scale[1], output.scale[2]);
   }
 
   static setRotationFromEuler(

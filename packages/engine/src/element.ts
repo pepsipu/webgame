@@ -1,33 +1,108 @@
-// Base class for all game elements.
-// Uses the tag name as the actual DOM element name: <box>, <camera>, etc.
-// Prototype-swapped onto the native element so game methods work on real DOM nodes.
-
-import { nativeCreateElement } from "./element-registry";
+import { resolveElementTypeForElement, ElementType } from "./element-registry";
 
 export class Element {
-  static readonly tag: string = "element";
+  readonly element: HTMLElement;
 
-  constructor() {
-    const tag = (new.target as typeof Element).tag;
-    const el = nativeCreateElement.call(document, tag);
-    Object.setPrototypeOf(el, new.target.prototype);
-    return el as unknown as Element;
+  constructor(element: HTMLElement) {
+    this.element = element;
   }
 
   get classes(): readonly string[] {
-    return Array.from(this.classList);
+    return Array.from(this.element.classList);
   }
 
   set classes(value: readonly string[]) {
-    this.className = value.join(" ");
+    this.element.className = value.join(" ");
+  }
+
+  get id(): string {
+    return this.element.id;
+  }
+
+  set id(value: string) {
+    this.element.id = value;
   }
 
   get parent(): Element | null {
-    const parent = this.parentElement;
-    return parent instanceof Element ? parent : null;
+    const parent = this.element.parentElement;
+
+    if (parent !== null && parent instanceof Element) {
+      return parent;
+    }
+
+    return null;
+  }
+
+  getAttribute(name: string): string | null {
+    return this.element.getAttribute(name);
+  }
+
+  setAttribute(name: string, value: string): void {
+    this.element.setAttribute(name, value);
+  }
+
+  hasAttribute(name: string): boolean {
+    return this.element.hasAttribute(name);
+  }
+
+  removeAttribute(name: string): void {
+    this.element.removeAttribute(name);
+  }
+
+  protected ensureAttribute(name: string, value: string): void {
+    if (!this.element.hasAttribute(name)) {
+      this.element.setAttribute(name, value);
+    }
+  }
+
+  protected getNumberAttribute(name: string, fallback: number): number {
+    const value = this.element.getAttribute(name);
+
+    if (value === null) {
+      return fallback;
+    }
+
+    const parsed = parseFloat(value);
+
+    if (Number.isNaN(parsed)) {
+      return fallback;
+    }
+
+    return parsed;
+  }
+
+  protected setNumberAttribute(name: string, value: number): void {
+    this.element.setAttribute(name, String(value));
+  }
+
+  protected getStringAttribute(name: string, fallback = ""): string {
+    return this.element.getAttribute(name) ?? fallback;
+  }
+
+  protected setStringAttribute(name: string, value: string): void {
+    this.element.setAttribute(name, value);
+  }
+
+  isElementType(type: ElementType): boolean {
+    // we can no longer use instanceof on an ElementType, so we check the tag name instead
+    return this.element.tagName.toLowerCase() === type.tag;
+  }
+
+  static [Symbol.hasInstance](value: unknown): boolean {
+    if (!(value instanceof HTMLElement)) {
+      return false;
+    }
+
+    const type = resolveElementTypeForElement(value);
+
+    if (type === undefined) {
+      return false;
+    }
+
+    const expectedType = this as unknown as { prototype: object };
+
+    return expectedType.prototype.isPrototypeOf(type.prototype);
   }
 }
-
-Object.setPrototypeOf(Element.prototype, HTMLElement.prototype);
 
 export interface Element extends HTMLElement {}

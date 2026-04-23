@@ -1,57 +1,81 @@
 import { Element } from "@webgames/engine";
 
+type InputState = {
+  down: Set<string>;
+  pressed: Set<string>;
+  released: Set<string>;
+};
+
+const stateByElement = new WeakMap<HTMLElement, InputState>();
+
 export class InputServiceElement extends Element {
   static readonly tag: string = "input-service";
   static readonly replicated: boolean = false;
 
-  down: Set<string>;
-  pressed: Set<string>;
-  released: Set<string>;
-
-  constructor() {
-    super();
-    this.down = new Set();
-    this.pressed = new Set();
-    this.released = new Set();
+  constructor(element: HTMLElement) {
+    super(element);
+    getState(this.element);
   }
 
   isDown(code: string): boolean {
-    return this.down.has(code);
+    return getState(this.element).down.has(code);
   }
 
   wasPressed(code: string): boolean {
-    return this.pressed.has(code);
+    return getState(this.element).pressed.has(code);
   }
 
   wasReleased(code: string): boolean {
-    return this.released.has(code);
+    return getState(this.element).released.has(code);
   }
 
   pressKey(code: string): void {
-    if (this.down.has(code)) {
+    const state = getState(this.element);
+
+    if (state.down.has(code)) {
       return;
     }
 
-    this.down.add(code);
-    this.pressed.add(code);
+    state.down.add(code);
+    state.pressed.add(code);
   }
 
   releaseKey(code: string): void {
-    if (!this.down.has(code)) {
+    const state = getState(this.element);
+
+    if (!state.down.has(code)) {
       return;
     }
 
-    this.down.delete(code);
-    this.released.add(code);
+    state.down.delete(code);
+    state.released.add(code);
   }
 
   clearFrame(): void {
-    this.pressed.clear();
-    this.released.clear();
+    const state = getState(this.element);
+
+    state.pressed.clear();
+    state.released.clear();
   }
 
   reset(): void {
-    this.down.clear();
+    getState(this.element).down.clear();
     this.clearFrame();
   }
+}
+
+function getState(element: HTMLElement): InputState {
+  let state = stateByElement.get(element);
+
+  if (state !== undefined) {
+    return state;
+  }
+
+  state = {
+    down: new Set(),
+    pressed: new Set(),
+    released: new Set(),
+  };
+  stateByElement.set(element, state);
+  return state;
 }

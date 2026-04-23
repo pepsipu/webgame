@@ -1,6 +1,8 @@
-import { Element } from "./element";
-import { ElementRegistry, nativeCreateElement } from "./element-registry";
-import type { ElementSnapshot } from "./snapshot";
+import {
+  ElementRegistry,
+  createElementHelper,
+  setActiveElementRegistry,
+} from "./element-registry";
 
 export interface EngineSystem {
   install(engine: Engine): void;
@@ -18,12 +20,11 @@ export class Engine {
 
   constructor(systems: EngineSystem[]) {
     this.registry = new ElementRegistry();
-    this.registry.register(Element);
     this.tickHandlers = [];
     this.afterTickHandlers = [];
     this.destroyHandlers = [];
 
-    this.#patchCreateElement();
+    installElementPrototypeProxy(this.registry);
 
     for (const system of systems) {
       system.install(this);
@@ -47,40 +48,90 @@ export class Engine {
       this.destroyHandlers[index](this);
     }
 
-    this.#restoreCreateElement();
+    uninstallElementPrototypeProxy();
 
     for (const child of Array.from(document.body.children)) {
-      if (child instanceof Element) {
+      if (child.closest("[data-no-replicate]") === null) {
         child.remove();
       }
     }
   }
+}
 
-  #patchCreateElement(): void {
-    const registry = this.registry;
+let activeProxyEngineCount = 0;
+let originalHTMLElementParent: object | null = null;
 
-    (document as any).createElement = function (
-      tagOrSnapshot: string | ElementSnapshot,
-      options?: ElementCreationOptions,
-    ): HTMLElement {
-      // if the argument is a snapshot or a registered tag, create from registry
-      if (typeof tagOrSnapshot === "object") {
-        return registry.create(tagOrSnapshot as ElementSnapshot);
-      } else if (registry.hasTag(tagOrSnapshot)) {
-        return registry.create({ tag: tagOrSnapshot });
-      }
+function installElementPrototypeProxy(registry: ElementRegistry): void {
+  if (activeProxyEngineCount === 0) {
+    originalHTMLElementParent = Object.getPrototypeOf(HTMLElement.prototype);
 
-      // otherwise, create a normal DOM element
-      return nativeCreateElement.call(document, tagOrSnapshot, options);
-    };
+    if (originalHTMLElementParent === null) {
+      throw new Error("HTMLElement prototype does not have a parent.");
+    }
+
+    const proxyParent = new Proxy(originalHTMLElementParent, {
+      get(target, property, receiver) {
+        if (typeof property !== "string" || Reflect.has(target, property)) {
+          return Reflect.get(target, property, receiver);
+        }
+
+        if (!(receiver instanceof HTMLElement)) {
+          return Reflect.get(target, property, receiver);
+        }
+
+        const helper = createElementHelper(receiver);
+        // console.log(`Accessing property "${property}" on <${receiver.tagName}> helper:`, helper);
+
+        if (helper === null || !(property in helper)) {
+          return Reflect.get(target, property, receiver);
+        }
+
+        const value = Reflect.get(helper, property, helper);
+
+        return typeof value === "function" ? value.bind(helper) : value;
+      },
+      set(target, property, value, receiver) {
+        if (typeof property !== "string" || Reflect.has(target, property)) {
+          return Reflect.set(target, property, value, receiver);
+        }
+
+        if (!(receiver instanceof HTMLElement)) {
+          return Reflect.set(target, property, value, receiver);
+        }
+
+        const helper = createElementHelper(receiver);
+
+        if (helper === null || !(property in helper)) {
+          return Reflect.set(target, property, value, receiver);
+        }
+
+        Reflect.set(helper, property, value, helper);
+        return true;
+      },
+    });
+
+    Object.setPrototypeOf(HTMLElement.prototype, proxyParent);
   }
 
-  #restoreCreateElement(): void {
-    (document as any).createElement = function (
-      tag: string,
-      options?: ElementCreationOptions,
-    ) {
-      return nativeCreateElement.call(document, tag, options);
-    };
+  activeProxyEngineCount += 1;
+  setActiveElementRegistry(registry);
+}
+
+function uninstallElementPrototypeProxy(): void {
+  if (activeProxyEngineCount === 0) {
+    return;
   }
+
+  activeProxyEngineCount -= 1;
+
+  if (activeProxyEngineCount > 0) {
+    return;
+  }
+
+  if (originalHTMLElementParent !== null) {
+    Object.setPrototypeOf(HTMLElement.prototype, originalHTMLElementParent);
+  }
+
+  originalHTMLElementParent = null;
+  setActiveElementRegistry(null);
 }

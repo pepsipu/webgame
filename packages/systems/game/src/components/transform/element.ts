@@ -1,4 +1,3 @@
-import type { ElementField, ElementFields } from "@webgames/engine";
 import { Element } from "@webgames/engine";
 import { Quaternion } from "../../math/quaternion";
 import { Vector3 } from "../../math/vector3";
@@ -6,78 +5,95 @@ import { Transform } from "./value";
 
 export class TransformElement extends Element {
   static readonly tag: string = "transform";
-  static readonly fields: ElementFields<any> = {
-    position: vector3Field<TransformElement>(
-      "position",
-      (element) => element.transform.position,
-    ),
-    rotation: createRotationField(),
-    scale: vector3Field<TransformElement>(
-      "scale",
-      (element) => element.transform.scale,
-    ),
-  } satisfies ElementFields<TransformElement>;
 
-  transform: Transform;
+  constructor(element: HTMLElement) {
+    super(element);
+    this.ensureAttribute("position", "0 0 0");
+    this.ensureAttribute("rotation", "0 0 0");
+    this.ensureAttribute("scale", "1 1 1");
+  }
 
-  constructor() {
-    super();
-    this.transform = Transform.create();
+  get position(): Vector3 {
+    return Vector3.create(...parseVector3String(this.getAttribute("position") ?? "0 0 0", "position"));
+  }
+
+  set position(value: readonly number[]) {
+    if (
+      value.length !== 3 ||
+      value.some((entry) => typeof entry !== "number" || Number.isNaN(entry))
+    ) {
+      throw new Error('Property "position" must be a 3D vector.');
+    }
+
+    this.setAttribute("position", `${value[0]} ${value[1]} ${value[2]}`);
+  }
+
+  get rotation(): Quaternion {
+    const value = this.getAttribute("rotation") ?? "0 0 0";
+    const parsed = value
+      .trim()
+      .split(/\s+/)
+      .map((entry) => parseFloat(entry));
+
+    if (parsed.length === 4 && parsed.every((entry) => !Number.isNaN(entry))) {
+      return Quaternion.create(parsed[0], parsed[1], parsed[2], parsed[3]);
+    }
+
+    if (parsed.length === 3 && parsed.every((entry) => !Number.isNaN(entry))) {
+      const transform = Transform.create();
+
+      Transform.setRotationFromEuler(transform, parsed[0], parsed[1], parsed[2]);
+      return Quaternion.clone(transform.rotation);
+    }
+
+    return Quaternion.create();
+  }
+
+  set rotation(value: readonly number[]) {
+    if (
+      value.length !== 4 ||
+      value.some((entry) => typeof entry !== "number" || Number.isNaN(entry))
+    ) {
+      throw new Error('Property "rotation" must be a quaternion.');
+    }
+
+    this.setAttribute("rotation", `${value[0]} ${value[1]} ${value[2]} ${value[3]}`);
+  }
+
+  get scale(): Vector3 {
+    return Vector3.create(...parseVector3String(this.getAttribute("scale") ?? "1 1 1", "scale"));
+  }
+
+  set scale(value: readonly number[]) {
+    if (
+      value.length !== 3 ||
+      value.some((entry) => typeof entry !== "number" || Number.isNaN(entry))
+    ) {
+      throw new Error('Property "scale" must be a 3D vector.');
+    }
+
+    this.setAttribute("scale", `${value[0]} ${value[1]} ${value[2]}`);
+  }
+
+  get transform(): Transform {
+    return Transform.create(this.position, this.rotation, this.scale);
   }
 
   setPosition(x: number, y: number, z: number): void {
-    this.transform.position[0] = x;
-    this.transform.position[1] = y;
-    this.transform.position[2] = z;
+    this.setAttribute("position", `${x} ${y} ${z}`);
   }
 
   setRotation(x: number, y: number, z: number, w: number): void {
-    this.transform.rotation[0] = x;
-    this.transform.rotation[1] = y;
-    this.transform.rotation[2] = z;
-    this.transform.rotation[3] = w;
+    this.setAttribute("rotation", `${x} ${y} ${z} ${w}`);
   }
 
   setRotationFromEuler(x: number, y: number, z: number): void {
-    Transform.setRotationFromEuler(this.transform, x, y, z);
+    this.setAttribute("rotation", `${x} ${y} ${z}`);
   }
 
   setScale(x: number, y: number, z: number): void {
-    this.transform.scale[0] = x;
-    this.transform.scale[1] = y;
-    this.transform.scale[2] = z;
+    this.setAttribute("scale", `${x} ${y} ${z}`);
   }
-}
-
-function requireVector3(value: unknown, key: string): [number, number, number] {
-  if (typeof value === "string") {
-    return parseVector3String(value, key);
-  }
-
-  if (
-    Array.isArray(value) &&
-    value.length === 3 &&
-    value.every((entry) => typeof entry === "number")
-  ) {
-    return [value[0], value[1], value[2]];
-  }
-
-  throw new Error(`Field "${key}" must be a 3D vector.`);
-}
-
-function requireQuaternion(
-  value: unknown,
-  key: string,
-): [number, number, number, number] {
-  if (
-    Array.isArray(value) &&
-    value.length === 4 &&
-    value.every((entry) => typeof entry === "number")
-  ) {
-    return [value[0], value[1], value[2], value[3]];
-  }
-
-  throw new Error(`Field "${key}" must be a quaternion.`);
 }
 
 function parseVector3String(
@@ -86,7 +102,7 @@ function parseVector3String(
 ): [number, number, number] {
   const parts = value
     .trim()
-    .split(" ")
+    .split(/\s+/)
     .map((entry) => parseFloat(entry));
 
   if (parts.length !== 3 || parts.some((entry) => Number.isNaN(entry))) {
@@ -96,33 +112,16 @@ function parseVector3String(
   return [parts[0], parts[1], parts[2]];
 }
 
-export function vector3Field<TElement extends Element>(
+export function parseVector3Attribute(
+  element: HTMLElement,
   key: string,
-  get: (element: TElement) => Vector3,
-): ElementField<TElement> {
-  return {
-    get: (element) => Vector3.clone(get(element)),
-    set: (element, value) => {
-      Vector3.copy(get(element), requireVector3(value, key));
-    },
-  };
-}
+  fallback: [number, number, number],
+): [number, number, number] {
+  const value = element.getAttribute(key);
 
-function createRotationField(): ElementField<TransformElement> {
-  return {
-    get: (element) => Quaternion.clone(element.transform.rotation),
-    set: (element, value) => {
-      if (typeof value === "string") {
-        const [x, y, z] = parseVector3String(value, "rotation");
+  if (value === null) {
+    return fallback;
+  }
 
-        Transform.setRotationFromEuler(element.transform, x, y, z);
-        return;
-      }
-
-      Quaternion.copy(
-        element.transform.rotation,
-        requireQuaternion(value, "rotation"),
-      );
-    },
-  };
+  return parseVector3String(value, key);
 }

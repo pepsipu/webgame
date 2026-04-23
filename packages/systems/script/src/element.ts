@@ -1,15 +1,20 @@
-import { Element, stringField, type ElementFields } from "@webgames/engine";
+import { Element } from "@webgames/engine";
 
 export class ScriptElement extends Element {
   static readonly tag: string = "script";
-  static readonly fields: ElementFields<any> = {
-    text: stringField<ScriptElement>("text"),
-  } satisfies ElementFields<ScriptElement>;
 
-  text: string;
+  constructor(element: HTMLElement) {
+    super(element);
+    if (this.element.textContent === null) {
+      this.element.textContent = "";
+    }
+  }
 
-  constructor() {
-    super();
-    this.text = "";
+  get text(): string {
+    return this.element.textContent ?? "";
+  }
+
+  set text(value: string) {
+    this.element.textContent = value;
   }
 }

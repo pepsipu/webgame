@@ -9,7 +9,7 @@ export async function createRendererSystem(
   return {
     install(engine) {
       engine.tickHandlers.push(() => {
-        renderer.render(document);
+        renderer.render();
       });
       engine.destroyHandlers.push(() => {
         renderer.destroy();

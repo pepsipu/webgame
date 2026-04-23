@@ -1,36 +1,40 @@
-import type { ElementFields } from "@webgames/engine";
 import type { Mesh } from "./mesh";
 import type { Material } from "./material";
-import { TransformElement, vector3Field } from "./transform";
+import { TransformElement, parseVector3Attribute } from "./transform";
 import { Vector3 } from "../math/vector3";
 
+type MeshCacheEntry = {
+  mesh: Mesh;
+  key: string;
+};
+
+const meshCache = new WeakMap<HTMLElement, MeshCacheEntry>();
+
 export abstract class ShapeElement extends TransformElement {
-  static readonly fields: ElementFields<any> = {
-    color: vector3Field<ShapeElement>("color", (element) => element.material),
-  } satisfies ElementFields<ShapeElement>;
+  constructor(element: HTMLElement) {
+    super(element);
+    this.ensureAttribute("color", "1 1 1");
+  }
 
-  material: Material;
-  #mesh: Mesh | null;
-  #meshKey: string | null;
+  get material(): Material {
+    return Vector3.create(...parseVector3Attribute(this.element, "color", [1, 1, 1]));
+  }
 
-  constructor() {
-    super();
-    this.material = Vector3.create(1, 1, 1);
-    this.#mesh = null;
-    this.#meshKey = null;
+  set material(value: Material) {
+    this.setAttribute("color", `${value[0]} ${value[1]} ${value[2]}`);
   }
 
   get mesh(): Mesh {
-    const meshKey = this.getMeshKey();
+    const key = this.getMeshKey();
+    const cached = meshCache.get(this.element);
 
-    if (this.#mesh !== null && this.#meshKey === meshKey) {
-      return this.#mesh;
+    if (cached !== undefined && cached.key === key) {
+      return cached.mesh;
     }
 
     const mesh = this.createMesh();
 
-    this.#mesh = mesh;
-    this.#meshKey = meshKey;
+    meshCache.set(this.element, { mesh, key });
     return mesh;
   }
 

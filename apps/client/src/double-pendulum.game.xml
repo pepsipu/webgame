@@ -128,17 +128,15 @@
     function spawnBoxAtOrigin() {
       const offset = (spawnedBoxes % 5) * 0.45 - 0.9;
 
-      let newBox = document.createElement({
-        tag: "box",
-        class: ["cube"],
-        position: [offset, 3.2, 0],
-        width: 0.35,
-        height: 0.35,
-        depth: 0.35,
-        color: [0.9, 0.48, 0.18],
-        body: "dynamic",
-      });
-      
+      let newBox = document.createElement("box");
+      newBox.setAttribute("class", "cube");
+      newBox.setAttribute("position", `${offset} 3.2 0`);
+      newBox.setAttribute("width", "0.35");
+      newBox.setAttribute("height", "0.35");
+      newBox.setAttribute("depth", "0.35");
+      newBox.setAttribute("color", "0.9 0.48 0.18");
+      newBox.setAttribute("body", "dynamic");
+
       document.body.append(newBox);
       spawnedBoxes += 1;
     }

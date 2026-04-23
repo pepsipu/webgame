@@ -23,38 +23,41 @@ type RelayEventData = {
   data: unknown;
 };
 
+type ServerState = {
+  socket: WebSocket;
+  incomingEvents: ServerNetworkEvent[];
+};
+
+const stateByElement = new WeakMap<HTMLElement, ServerState>();
+
 export class ServerNetworkServiceElement extends Element {
   static readonly tag: string = "network";
   static readonly replicated: boolean = false;
-
-  #socket: WebSocket;
-  #incomingEvents: ServerNetworkEvent[] = [];
-
-  constructor() {
-    super();
-    this.#socket = this.#connect();
-  }
-
+  
   pollEvent(): ServerNetworkEvent | undefined {
-    return this.#incomingEvents.shift();
+    return getState(this.element, () => this.#connect()).incomingEvents.shift();
   }
 
   broadcastSnapshot(registry: ElementRegistry): void {
-    if (this.#socket.readyState === WebSocket.OPEN) {
-      this.#socket.send(JSON.stringify(registry.getGameSnapshot()));
+    const state = getState(this.element, () => this.#connect());
+
+    if (state.socket.readyState === WebSocket.OPEN) {
+      state.socket.send(JSON.stringify(registry.getGameSnapshot()));
     }
   }
 
   destroy(): void {
-    this.#socket.close();
+    getState(this.element, () => this.#connect()).socket.close();
   }
 
   #connect(): WebSocket {
     const protocol = location.protocol === "https:" ? "wss:" : "ws:";
     const socket = new WebSocket(`${protocol}//${location.host}/ws?role=host`);
+    const element = this.element;
 
     socket.addEventListener("message", (event) => {
       const message = JSON.parse(String(event.data)) as RelayMessage;
+      const state = getState(element, () => socket);
 
       if (message.type === "message") {
         const relayEvent = this.#parseRelayEventData(message.data);
@@ -63,7 +66,7 @@ export class ServerNetworkServiceElement extends Element {
           return;
         }
 
-        this.#incomingEvents.push({
+        state.incomingEvents.push({
           clientId: message.clientId,
           name: relayEvent.name,
           data: relayEvent.data,
@@ -71,7 +74,7 @@ export class ServerNetworkServiceElement extends Element {
         return;
       }
 
-      this.#incomingEvents.push({
+      state.incomingEvents.push({
         clientId: message.clientId,
         name: message.type,
         data: null,
@@ -97,4 +100,22 @@ export class ServerNetworkServiceElement extends Element {
       data: relayEvent.data,
     };
   }
+}
+
+function getState(
+  element: HTMLElement,
+  createSocket: () => WebSocket,
+): ServerState {
+  let state = stateByElement.get(element);
+
+  if (state !== undefined) {
+    return state;
+  }
+
+  state = {
+    socket: createSocket(),
+    incomingEvents: [],
+  };
+  stateByElement.set(element, state);
+  return state;
 }

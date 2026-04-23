@@ -41,25 +41,28 @@ export function createColliderDesc(
   element: ShapeElement,
   scale: Vector3Value,
 ) {
-  if (element instanceof BoxElement) {
+  if (element.isElementType(BoxElement)) {
+    let box = element as BoxElement;
     return rapier.ColliderDesc.cuboid(
-      Math.abs(scale[0]) * element.width * 0.5,
-      Math.abs(scale[1]) * element.height * 0.5,
-      Math.abs(scale[2]) * element.depth * 0.5,
+      Math.abs(scale[0]) * box.width * 0.5,
+      Math.abs(scale[1]) * box.height * 0.5,
+      Math.abs(scale[2]) * box.depth * 0.5,
     );
   }
 
-  if (element instanceof TubeElement) {
+  if (element.isElementType(TubeElement)) {
+    let tube = element as TubeElement;
     return rapier.ColliderDesc.cylinder(
-      Math.abs(scale[1]) * element.height * 0.5,
-      Math.max(Math.abs(scale[0]), Math.abs(scale[2])) * element.radius,
+      Math.abs(scale[1]) * tube.height * 0.5,
+      Math.max(Math.abs(scale[0]), Math.abs(scale[2])) * tube.radius,
     );
   }
 
-  if (element instanceof BallElement) {
+  if (element.isElementType(BallElement)) {
+    let ball = element as BallElement;
     return rapier.ColliderDesc.ball(
       Math.max(Math.abs(scale[0]), Math.abs(scale[1]), Math.abs(scale[2])) *
-        element.radius,
+        ball.radius,
     );
   }
 

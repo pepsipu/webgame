@@ -4,7 +4,9 @@ import { ServerNetworkServiceElement } from "./server";
 export const serverNetworkSystem: EngineSystem = {
   install(engine) {
     engine.registry.register(ServerNetworkServiceElement);
-    const networkService = new ServerNetworkServiceElement();
+    const networkService = document.createElement(
+      ServerNetworkServiceElement.tag,
+    ) as unknown as ServerNetworkServiceElement;
     document.body.append(networkService);
 
     engine.afterTickHandlers.push(() => {
