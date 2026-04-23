@@ -67,7 +67,10 @@ export class ElementRegistry {
   }
 
   create(snapshot: ElementSnapshot): HTMLElement {
-    const element = nativeCreateElement.call(document, normalizeTag(snapshot.tag));
+    const element = nativeCreateElement.call(
+      document,
+      normalizeTag(snapshot.tag),
+    );
 
     this.#syncElement(element, snapshot);
     return element;
