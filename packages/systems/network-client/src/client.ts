@@ -7,20 +7,20 @@ export class ClientNetworkServiceElement extends Element {
 
   #destroyed: boolean;
   #pendingSnapshot?: ElementSnapshot;
-  #socket: WebSocket;
+  socket: WebSocket;
 
   constructor() {
     super();
     this.#destroyed = false;
-    this.#socket = this.#createSocket();
+    this.socket = this.#createSocket();
   }
 
   emit(name: string, data: unknown): void {
-    if (this.#socket.readyState !== WebSocket.OPEN) {
+    if (this.socket.readyState !== WebSocket.OPEN) {
       return;
     }
 
-    this.#socket.send(JSON.stringify({ name, data }));
+    this.socket.send(JSON.stringify({ name, data }));
   }
 
   applyPendingSnapshot(registry: ElementRegistry): void {
@@ -36,7 +36,7 @@ export class ClientNetworkServiceElement extends Element {
 
   destroy(): void {
     this.#destroyed = true;
-    this.#socket.close();
+    this.socket.close();
   }
 
   #getWebSocketUrl(): string {
@@ -67,7 +67,7 @@ export class ClientNetworkServiceElement extends Element {
           return;
         }
 
-        this.#socket = this.#createSocket();
+        this.socket = this.#createSocket();
       }, 100);
     });
 
