@@ -1,28 +1,23 @@
 import { UiElement } from "./base";
 
-const clickedByElement = new WeakMap<HTMLElement, boolean>();
-const listenerInstalled = new WeakSet<HTMLElement>();
-
 export class ButtonElement extends UiElement {
   static readonly tag: string = "button";
+  #clicked = false;
 
   constructor(element: HTMLElement) {
     super(element);
 
-    if (!listenerInstalled.has(this.element)) {
-      this.element.addEventListener("click", () => {
-        clickedByElement.set(this.element, true);
-      });
-      listenerInstalled.add(this.element);
-    }
+    this.element.addEventListener("click", () => {
+      this.#clicked = true;
+    });
   }
 
   get clicked(): boolean {
-    return clickedByElement.get(this.element) ?? false;
+    return this.#clicked;
   }
 
   set clicked(value: boolean) {
-    clickedByElement.set(this.element, value);
+    this.#clicked = value;
   }
 
   override clearFrame(): void {
@@ -30,6 +25,6 @@ export class ButtonElement extends UiElement {
   }
 
   wasClicked(): boolean {
-    return this.clicked;
+    return this.#clicked;
   }
 }

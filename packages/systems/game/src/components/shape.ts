@@ -3,17 +3,15 @@ import type { Material } from "./material";
 import { TransformElement, parseVector3Attribute } from "./transform";
 import { Vector3 } from "../math/vector3";
 
-type MeshCacheEntry = {
-  mesh: Mesh;
-  key: string;
-};
-
-const meshCache = new WeakMap<HTMLElement, MeshCacheEntry>();
-
 export abstract class ShapeElement extends TransformElement {
+  #mesh: Mesh | null;
+  #meshKey: string | null;
+
   constructor(element: HTMLElement) {
     super(element);
     this.ensureAttribute("color", "1 1 1");
+    this.#mesh = null;
+    this.#meshKey = null;
   }
 
   get material(): Material {
@@ -27,16 +25,16 @@ export abstract class ShapeElement extends TransformElement {
   }
 
   get mesh(): Mesh {
-    const key = this.getMeshKey();
-    const cached = meshCache.get(this.element);
+    const meshKey = this.getMeshKey();
 
-    if (cached !== undefined && cached.key === key) {
-      return cached.mesh;
+    if (this.#mesh !== null && this.#meshKey === meshKey) {
+      return this.#mesh;
     }
 
     const mesh = this.createMesh();
 
-    meshCache.set(this.element, { mesh, key });
+    this.#mesh = mesh;
+    this.#meshKey = meshKey;
     return mesh;
   }
 

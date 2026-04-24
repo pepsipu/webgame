@@ -29,7 +29,7 @@ type ShapePhysicsPrototype = ShapeElement & {
   ): void;
 };
 
-const activeBodies = new WeakMap<HTMLElement, RigidBody>();
+const rigidBodyKey = Symbol("shape-rigid-body");
 const scratchTransform = Transform.create();
 const scratchPoint = Vector3.create();
 
@@ -112,15 +112,15 @@ export function setShapeRigidBody(
   element: ShapeElement,
   body: RigidBody,
 ): void {
-  activeBodies.set(getElementNode(element), body);
+  getShapeElementWithRigidBody(element)[rigidBodyKey] = body;
 }
 
 export function clearShapeRigidBody(element: ShapeElement): void {
-  activeBodies.delete(getElementNode(element));
+  delete getShapeElementWithRigidBody(element)[rigidBodyKey];
 }
 
 function requireRigidBody(element: ShapeElement): RigidBody {
-  const body = activeBodies.get(getElementNode(element));
+  const body = getShapeElementWithRigidBody(element)[rigidBodyKey];
 
   if (body !== undefined) {
     return body;
@@ -159,4 +159,14 @@ function getElementNode(element: ShapeElement): HTMLElement {
   return helperElement instanceof HTMLElement
     ? helperElement
     : (element as unknown as HTMLElement);
+}
+
+type ShapeElementWithRigidBody = HTMLElement & {
+  [rigidBodyKey]?: RigidBody;
+};
+
+function getShapeElementWithRigidBody(
+  element: ShapeElement,
+): ShapeElementWithRigidBody {
+  return getElementNode(element) as ShapeElementWithRigidBody;
 }

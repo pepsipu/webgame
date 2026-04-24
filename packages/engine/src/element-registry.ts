@@ -2,7 +2,7 @@ import type { ElementSnapshot } from "./snapshot";
 
 export const nativeCreateElement = Document.prototype.createElement;
 
-export type ElementType<T extends object = object> = (new (
+export type ElementType<T extends Element = Element> = (new (
   element: HTMLElement,
 ) => T) & {
   readonly tag: string;
@@ -29,6 +29,7 @@ export function createElementHelper(element: HTMLElement): object | null {
 
 export class ElementRegistry {
   readonly #typesByTag = new Map<string, ElementType>();
+  readonly #helpersByElement = new WeakMap<HTMLElement, Element>();
 
   register(...types: ElementType[]): void {
     for (const type of types) {
@@ -56,14 +57,23 @@ export class ElementRegistry {
     return this.#typesByTag.get(element.tagName.toLowerCase());
   }
 
-  createHelper(element: HTMLElement): object | null {
+  createHelper(element: HTMLElement): Element | null {
+    const cached = this.#helpersByElement.get(element);
+
+    if (cached !== undefined) {
+      return cached;
+    }
+
     const type = this.getTypeForElement(element);
 
     if (type === undefined) {
       return null;
     }
 
-    return new type(element);
+    const helper = new type(element);
+
+    this.#helpersByElement.set(element, helper);
+    return helper;
   }
 
   create(snapshot: ElementSnapshot): HTMLElement {

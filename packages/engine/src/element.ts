@@ -1,5 +1,11 @@
 import { resolveElementTypeForElement, ElementType } from "./element-registry";
 
+// Registerable helper class for elements.
+// When a subclass is registered with a `static readonly tag: string`,
+// The fields and methods of the class become available on any HTMLElement with the matching tag name.
+// At runtime, the HTMLElement is wrapped in a Proxy that forwards property accesses,
+// creating a cached instance of the class on demand.
+// Attributes on the underlying HTMLElement will be replicated, but properties of this helper are not replicated.
 export class Element {
   readonly element: HTMLElement;
 
