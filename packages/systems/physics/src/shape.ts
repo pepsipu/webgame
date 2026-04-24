@@ -29,7 +29,9 @@ type ShapePhysicsPrototype = ShapeElement & {
   ): void;
 };
 
-const rigidBodyKey = Symbol("shape-rigid-body");
+// todo: we might want to update this API to not use weakmap
+// and instead use actual fields on the element helper objects
+const activeBodies = new WeakMap<HTMLElement, RigidBody>();
 const scratchTransform = Transform.create();
 const scratchPoint = Vector3.create();
 
@@ -51,7 +53,7 @@ export function installShapePhysics(): void {
       return getShapePhysicsBody(this);
     },
     set(this: ShapeElement, value: PhysicsBodyType) {
-      getElementNode(this).setAttribute("body", requireBodyType(value));
+      this.setAttribute("body", requireBodyType(value));
     },
   });
   Object.assign(type.prototype as ShapePhysicsPrototype, {
@@ -99,7 +101,7 @@ export function installShapePhysics(): void {
 }
 
 export function getShapePhysicsBody(element: ShapeElement): PhysicsBodyType {
-  const value = getElementNode(element).getAttribute("body");
+  const value = element.getAttribute("body");
 
   if (value === null || value === "") {
     return "none";
@@ -112,15 +114,15 @@ export function setShapeRigidBody(
   element: ShapeElement,
   body: RigidBody,
 ): void {
-  getShapeElementWithRigidBody(element)[rigidBodyKey] = body;
+  activeBodies.set(getUnderlyingNode(element), body);
 }
 
 export function clearShapeRigidBody(element: ShapeElement): void {
-  delete getShapeElementWithRigidBody(element)[rigidBodyKey];
+  activeBodies.delete(getUnderlyingNode(element));
 }
 
 function requireRigidBody(element: ShapeElement): RigidBody {
-  const body = getShapeElementWithRigidBody(element)[rigidBodyKey];
+  const body = activeBodies.get(getUnderlyingNode(element));
 
   if (body !== undefined) {
     return body;
@@ -152,21 +154,6 @@ function requireBodyType(value: unknown): PhysicsBodyType {
   }
 }
 
-function getElementNode(element: ShapeElement): HTMLElement {
-  const helperElement = (element as unknown as { element?: HTMLElement })
-    .element;
-
-  return helperElement instanceof HTMLElement
-    ? helperElement
-    : (element as unknown as HTMLElement);
-}
-
-type ShapeElementWithRigidBody = HTMLElement & {
-  [rigidBodyKey]?: RigidBody;
-};
-
-function getShapeElementWithRigidBody(
-  element: ShapeElement,
-): ShapeElementWithRigidBody {
-  return getElementNode(element) as ShapeElementWithRigidBody;
+function getUnderlyingNode(element: ShapeElement): HTMLElement {
+  return element.element;
 }
