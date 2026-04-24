@@ -1,68 +1,93 @@
-import { readFile } from "node:fs/promises";
 import { createServer } from "node:http";
 import { getRequestListener } from "@hono/node-server";
-import { Engine } from "@webgames/engine";
-import { ButtonElement, ParagraphElement } from "@webgames/ui";
-import { gameSystem } from "@webgames/game";
-import { serverNetworkSystem } from "@webgames/network-server";
-import { loadGameFile } from "@webgames/parser";
-import { ScriptSystem } from "@webgames/script";
 import { Hono } from "hono";
-import { createPhysicsSystem } from "@webgames/physics";
+import { WebSocketServer, type WebSocket } from "ws";
 
 const port = Number(process.env.PORT ?? 8787);
-const defaultGameFileText = await readFile(
-  new URL("../../client/src/default.game.xml", import.meta.url),
-  "utf8",
-);
 const app = new Hono();
 const server = createServer(getRequestListener(app.fetch));
-let engine: Engine | null = await loadServerEngine(defaultGameFileText);
 
-app.put("/api/gamefile", async (context) => {
-  const text = await context.req.text();
-  engine?.destroy();
-  engine = null;
+type ClientEvent = {
+  name: string;
+  data: unknown;
+};
 
-  try {
-    engine = await loadServerEngine(text);
-  } catch (error) {
-    return context.text(
-      error instanceof Error ? error.message : String(error),
-      400,
-    );
+// websocket relay
+let host: WebSocket | null = null;
+let latestSnapshot: string | null = null;
+const clients = new Map<string, WebSocket>();
+
+const wss = new WebSocketServer({ server, path: "/ws" });
+
+wss.on("connection", (socket, req) => {
+  const url = new URL(req.url!, `http://${req.headers.host}`);
+
+  if (url.searchParams.get("role") === "host") {
+    // TODO: breaks when another person tries to become host
+    // need to handle logic
+    host = socket;
+
+    for (const clientId of clients.keys()) {
+      socket.send(JSON.stringify({ type: "connect", clientId }));
+    }
+
+    socket.on("message", (data) => {
+      const message = data.toString();
+      latestSnapshot = message;
+
+      for (const client of clients.values()) {
+        client.send(message);
+      }
+    });
+
+    socket.on("close", () => {
+      host = null;
+      latestSnapshot = null;
+    });
+  } else {
+    const clientId = crypto.randomUUID();
+    clients.set(clientId, socket);
+
+    host?.send(JSON.stringify({ type: "connect", clientId }));
+
+    if (latestSnapshot !== null) {
+      socket.send(latestSnapshot);
+    }
+
+    socket.on("message", (data) => {
+      const event = parseClientEvent(data.toString());
+
+      if (event === null) {
+        return;
+      }
+
+      host?.send(JSON.stringify({ type: "message", clientId, data: event }));
+    });
+
+    socket.on("close", () => {
+      clients.delete(clientId);
+      host?.send(JSON.stringify({ type: "disconnect", clientId }));
+    });
   }
-
-  return context.body(null, 204);
 });
 
 server.listen(port, () => {
   console.log(`Server listening on http://127.0.0.1:${port}`);
 });
 
-let previousTime = performance.now();
-setInterval(() => {
-  const now = performance.now();
-  const deltaTime = (now - previousTime) * 0.001;
-  previousTime = now;
-
-  engine?.tick(deltaTime);
-}, 1000 / 60);
-
-async function loadServerEngine(text: string): Promise<Engine> {
-  const engine = new Engine([
-    gameSystem,
-    new ScriptSystem(),
-    await createPhysicsSystem(),
-    serverNetworkSystem(server),
-  ]);
+function parseClientEvent(raw: string): ClientEvent | null {
   try {
-    // TODO: we should have a better way of registering elements without registering the system
-    engine.registry.register(ButtonElement, ParagraphElement);
-    loadGameFile(engine, text);
-    return engine;
-  } catch (error) {
-    engine.destroy();
-    throw error;
+    const event = JSON.parse(raw) as Partial<ClientEvent>;
+
+    if (typeof event.name !== "string") {
+      return null;
+    }
+
+    return {
+      name: event.name,
+      data: event.data,
+    };
+  } catch {
+    return null;
   }
 }

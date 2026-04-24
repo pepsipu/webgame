@@ -1,5 +1,4 @@
-import { type Element, selectElements } from "@webgames/engine";
-import { ShapeElement } from "@webgames/game";
+import { ShapeElement, shapeElements } from "@webgames/game";
 import { SphericalJointElement } from "./joint";
 import { getShapePhysicsBody } from "./shape";
 
@@ -9,21 +8,24 @@ export interface PhysicsScene {
   joints: Set<SphericalJointElement>;
 }
 
-export function collectPhysicsScene(root: Element): PhysicsScene {
-  const bodies = new Set(
-    selectElements(root, (element): element is ShapeElement => {
-      return (
-        element instanceof ShapeElement &&
-        getShapePhysicsBody(element) !== "none"
-      );
-    }),
-  );
+export function collectPhysicsScene(): PhysicsScene {
+  const bodies = new Set<ShapeElement>();
+  for (const type of shapeElements) {
+    for (const element of Array.from(
+      document.querySelectorAll(type.tag) as NodeListOf<ShapeElement>,
+    )) {
+      if (getShapePhysicsBody(element) === "none") {
+        continue;
+      }
+      bodies.add(element);
+    }
+  }
   const bodiesById = new Map<string, ShapeElement>();
 
   for (const element of bodies) {
     const id = element.id;
 
-    if (id === null) {
+    if (id === "") {
       continue;
     }
 
@@ -38,9 +40,11 @@ export function collectPhysicsScene(root: Element): PhysicsScene {
     bodies,
     bodiesById,
     joints: new Set(
-      selectElements(root, (element): element is SphericalJointElement => {
-        return element instanceof SphericalJointElement;
-      }),
+      Array.from(
+        document.querySelectorAll(
+          SphericalJointElement.tag,
+        ) as NodeListOf<SphericalJointElement>,
+      ),
     ),
   };
 

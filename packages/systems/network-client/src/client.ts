@@ -1,30 +1,27 @@
-import type { ElementRegistry } from "@webgames/engine";
-import { Element, type ElementSnapshot } from "@webgames/engine";
+import type { ElementRegistry, ElementSnapshot } from "@webgames/engine";
+import { Element } from "@webgames/engine";
 
 export class ClientNetworkServiceElement extends Element {
   static readonly tag: string = "network";
   static readonly replicated: boolean = false;
-  static readonly scriptMethods: readonly string[] = ["emit"];
-
-  #destroyed: boolean;
+  #destroyed = false;
   #pendingSnapshot?: ElementSnapshot;
-  socket: WebSocket;
+  readonly #socket: WebSocket;
 
-  constructor() {
-    super();
-    this.#destroyed = false;
-    this.socket = this.#createSocket();
+  constructor(element: HTMLElement) {
+    super(element);
+    this.#socket = this.#createSocket();
   }
 
   emit(name: string, data: unknown): void {
-    if (this.socket.readyState !== WebSocket.OPEN) {
+    if (this.#socket.readyState !== WebSocket.OPEN) {
       return;
     }
 
-    this.socket.send(JSON.stringify({ name, data }));
+    this.#socket.send(JSON.stringify({ name, data }));
   }
 
-  applyPendingSnapshot(registry: ElementRegistry, root: Element): void {
+  applyPendingSnapshot(registry: ElementRegistry): void {
     if (this.#pendingSnapshot === undefined) {
       return;
     }
@@ -32,12 +29,12 @@ export class ClientNetworkServiceElement extends Element {
     const snapshot = this.#pendingSnapshot;
 
     this.#pendingSnapshot = undefined;
-    registry.applySnapshot(root, snapshot);
+    registry.loadGameSnapshot(snapshot);
   }
 
   destroy(): void {
     this.#destroyed = true;
-    this.socket.close();
+    this.#socket.close();
   }
 
   #getWebSocketUrl(): string {
@@ -59,17 +56,8 @@ export class ClientNetworkServiceElement extends Element {
 
       this.#pendingSnapshot = {
         tag: "game",
-        id: null,
-        class: [],
         children: [],
       };
-      window.setTimeout(() => {
-        if (this.#destroyed) {
-          return;
-        }
-
-        this.socket = this.#createSocket();
-      }, 100);
     });
 
     return socket;

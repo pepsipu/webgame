@@ -1,16 +1,37 @@
-import type { ElementField } from "@webgames/engine";
 import { ShapeElement, Transform, Vector3 } from "@webgames/game";
 import type { RigidBody } from "./rapier";
 
 export type PhysicsBodyType = "none" | "fixed" | "dynamic";
 
 type ShapeElementType = typeof ShapeElement & {
-  fields: Record<string, ElementField<ShapeElement>>;
-  scriptMethods: string[];
-  prototype: ShapeElement & { body: PhysicsBodyType };
+  prototype: ShapeElement;
 };
 
-const activeBodies = new WeakMap<ShapeElement, RigidBody>();
+type ShapePhysicsPrototype = ShapeElement & {
+  body: PhysicsBodyType;
+  applyForce(x: number, y: number, z: number): void;
+  applyForceAtPoint(
+    forceX: number,
+    forceY: number,
+    forceZ: number,
+    pointX: number,
+    pointY: number,
+    pointZ: number,
+  ): void;
+  applyImpulse(x: number, y: number, z: number): void;
+  applyImpulseAtPoint(
+    impulseX: number,
+    impulseY: number,
+    impulseZ: number,
+    pointX: number,
+    pointY: number,
+    pointZ: number,
+  ): void;
+};
+
+// todo: we might want to update this API to not use weakmap
+// and instead use actual fields on the element helper objects
+const activeBodies = new WeakMap<HTMLElement, RigidBody>();
 const scratchTransform = Transform.create();
 const scratchPoint = Vector3.create();
 
@@ -26,22 +47,16 @@ export function installShapePhysics(): void {
 
   const type = ShapeElement as ShapeElementType;
 
-  type.fields.body = {
-    get: getShapePhysicsBody,
-    set(element, value) {
-      (element as ShapeElement & { body: PhysicsBodyType }).body =
-        requireBodyType(value);
+  Object.defineProperty(type.prototype, "body", {
+    configurable: true,
+    get(this: ShapeElement): PhysicsBodyType {
+      return getShapePhysicsBody(this);
     },
-  };
-  type.scriptMethods = [
-    ...type.scriptMethods,
-    "applyForce",
-    "applyForceAtPoint",
-    "applyImpulse",
-    "applyImpulseAtPoint",
-  ];
-  Object.assign(type.prototype, {
-    body: "none" as PhysicsBodyType,
+    set(this: ShapeElement, value: PhysicsBodyType) {
+      this.setAttribute("body", requireBodyType(value));
+    },
+  });
+  Object.assign(type.prototype as ShapePhysicsPrototype, {
     applyForce(this: ShapeElement, x: number, y: number, z: number): void {
       requireRigidBody(this).addForce({ x, y, z }, true);
     },
@@ -86,22 +101,28 @@ export function installShapePhysics(): void {
 }
 
 export function getShapePhysicsBody(element: ShapeElement): PhysicsBodyType {
-  return (element as ShapeElement & { body: PhysicsBodyType }).body;
+  const value = element.getAttribute("body");
+
+  if (value === null || value === "") {
+    return "none";
+  }
+
+  return requireBodyType(value);
 }
 
 export function setShapeRigidBody(
   element: ShapeElement,
   body: RigidBody,
 ): void {
-  activeBodies.set(element, body);
+  activeBodies.set(getUnderlyingNode(element), body);
 }
 
 export function clearShapeRigidBody(element: ShapeElement): void {
-  activeBodies.delete(element);
+  activeBodies.delete(getUnderlyingNode(element));
 }
 
 function requireRigidBody(element: ShapeElement): RigidBody {
-  const body = activeBodies.get(element);
+  const body = activeBodies.get(getUnderlyingNode(element));
 
   if (body !== undefined) {
     return body;
@@ -131,4 +152,8 @@ function requireBodyType(value: unknown): PhysicsBodyType {
     default:
       throw new Error('Field "body" must be "none", "fixed", or "dynamic".');
   }
+}
+
+function getUnderlyingNode(element: ShapeElement): HTMLElement {
+  return element.element;
 }

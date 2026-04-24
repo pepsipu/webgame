@@ -1,12 +1,17 @@
+import { ElementType } from "@webgames/engine";
+import { BallElement } from "./components/ball";
+import { BoxElement } from "./components/box";
+import { TubeElement } from "./components/tube";
+
 export { Quaternion } from "./math/quaternion";
 export { Vector3 } from "./math/vector3";
 export {
   Transform,
   TransformElement,
-  vector3Field,
+  parseVector3Attribute,
 } from "./components/transform";
 export { CameraElement } from "./components/camera";
-export { gameSystem } from "./system";
+export { gameSystem, shapeElements } from "./system";
 export { ShapeElement } from "./components/shape";
 export { BoxElement } from "./components/box";
 export { TubeElement } from "./components/tube";

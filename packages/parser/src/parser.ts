@@ -10,7 +10,7 @@ import {
 
 // loads the game file onto an engine instance.
 export function loadGameFile(engine: Engine, text: string): void {
-  engine.registry.applySnapshot(engine.document, parseGameFile(text));
+  engine.registry.loadGameSnapshot(parseGameFile(text));
 }
 
 export function parseGameFile(text: string): ElementSnapshot {
@@ -25,23 +25,12 @@ export function parseGameFile(text: string): ElementSnapshot {
 }
 
 function createSnapshot(element: UnparsedXmlNode): ElementSnapshot {
+  const attributes = getAttributes(element);
   const snapshot: ElementSnapshot = {
     tag: getType(element),
-    id: null,
-    class: [],
+    attributes,
     children: getChildren(element).map(createSnapshot),
   };
-  const attributes = getAttributes(element);
-
-  for (const [key, value] of Object.entries(attributes)) {
-    // TODO: this element specific logic in the parser, would be nice to avoid this
-    if (key === "class") {
-      snapshot.class = value.split(/\s+/).filter(Boolean);
-      continue;
-    }
-
-    snapshot[key] = value;
-  }
 
   const text = getText(element);
 

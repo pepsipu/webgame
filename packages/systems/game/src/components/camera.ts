@@ -1,22 +1,36 @@
-import { numberField, type ElementFields } from "@webgames/engine";
 import { TransformElement } from "./transform";
 
 export class CameraElement extends TransformElement {
   static readonly tag: string = "camera";
-  static readonly fields: ElementFields<any> = {
-    fovY: numberField<CameraElement>("fovY"),
-    near: numberField<CameraElement>("near"),
-    far: numberField<CameraElement>("far"),
-  } satisfies ElementFields<CameraElement>;
 
-  fovY: number;
-  near: number;
-  far: number;
+  constructor(element: HTMLElement) {
+    super(element);
+    this.ensureAttribute("fovY", `${Math.PI / 3}`);
+    this.ensureAttribute("near", "0.1");
+    this.ensureAttribute("far", "100");
+  }
 
-  constructor() {
-    super();
-    this.fovY = Math.PI / 3;
-    this.near = 0.1;
-    this.far = 100;
+  get fovY(): number {
+    return this.getNumberAttribute("fovY", Math.PI / 3);
+  }
+
+  set fovY(value: number) {
+    this.setNumberAttribute("fovY", value);
+  }
+
+  get near(): number {
+    return this.getNumberAttribute("near", 0.1);
+  }
+
+  set near(value: number) {
+    this.setNumberAttribute("near", value);
+  }
+
+  get far(): number {
+    return this.getNumberAttribute("far", 100);
+  }
+
+  set far(value: number) {
+    this.setNumberAttribute("far", value);
   }
 }

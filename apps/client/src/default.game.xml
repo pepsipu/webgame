@@ -28,7 +28,7 @@
     let seconds = 0;
     let animationEnabled = true;
     const cameraSpeed = 3;
-    const input = document.querySelector("input");
+    const input = document.querySelector("input-service");
     const network = document.querySelector("network");
     const camera = document.querySelector("#camera");
     const box = document.querySelector("#box");
@@ -38,6 +38,8 @@
     const ball = document.querySelector("#ball");
     const status = document.querySelector("#status");
     const toggle = document.querySelector("#toggle");
+    status.style.color = "lightblue"; // status is a real browser dom element, which can be styled
+
     let cameraX = 0;
     let cameraZ = 4;
     const clients = new Map();

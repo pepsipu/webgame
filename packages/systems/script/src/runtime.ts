@@ -1,66 +1,36 @@
-import type { Document, ElementRegistry } from "@webgames/engine";
-import type {
-  QuickJSContext,
-  QuickJSHandle,
-  QuickJSRuntime,
-} from "quickjs-emscripten-core";
-import { createElementHandle } from "./interop";
-import { ScriptElement } from "./element";
-
-const filename = "element.js";
-
 export class ScriptState {
-  context: QuickJSContext;
   source: string;
-  tickHandle: QuickJSHandle | null;
+  #tick: ((deltaTime: number) => void) | null;
 
-  constructor(
-    runtime: QuickJSRuntime,
-    registry: ElementRegistry,
-    document: Document,
-    element: ScriptElement,
-  ) {
-    this.context = runtime.newContext();
-    this.source = element.text;
-    this.tickHandle = null;
-
-    const documentHandle = createElementHandle(
-      this.context,
-      registry,
-      document,
-    );
-    this.context.setProp(this.context.global, "document", documentHandle);
-    documentHandle.dispose();
+  constructor(source: string) {
+    this.source = source;
+    this.#tick = null;
   }
 
   tick(deltaTime: number): void {
-    if (this.tickHandle == null) {
-      this.context
-        .evalCode(this.source, filename, {
-          strict: true,
-          type: "global",
-        })
-        .dispose();
-
-      // TODO: should unwrap eval for error handling here
-
-      this.tickHandle = this.context.getProp(this.context.global, "tick");
+    if (this.#tick === null) {
+      try {
+        // lazily initialize the script at the first tick
+        const getTick = new Function(
+          this.source +
+            '\nreturn typeof tick === "function" ? tick : undefined;',
+        );
+        this.#tick = getTick() ?? null;
+      } catch (error) {
+        console.error("Script evaluation error:", error);
+        this.#tick = null;
+      }
     }
 
-    const deltaTimeHandle = this.context.newNumber(deltaTime);
-    this.context
-      .callFunction(this.tickHandle, this.context.undefined, deltaTimeHandle)
-      .dispose();
-
-    // TODO: should unwrap func call for error handling here
-
-    deltaTimeHandle.dispose();
+    // execute the tick function if it exists
+    try {
+      this.#tick?.(deltaTime);
+    } catch (error) {
+      console.error("Script tick error:", error);
+    }
   }
 
   destroy(): void {
-    if (this.tickHandle) {
-      this.tickHandle.dispose();
-    }
-    this.context.dispose();
+    this.#tick = null;
   }
 }

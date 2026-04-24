@@ -1,34 +1,35 @@
-import { Element } from "./element";
 import type { ElementSnapshot } from "./snapshot";
 
-export interface ElementField<T extends Element = Element> {
-  get?(element: T): unknown;
-  set(element: T, value: unknown): void;
-}
-
-export type ElementFields<T extends Element = Element> = Readonly<
-  Record<string, ElementField<T>>
->;
+export const nativeCreateElement = Document.prototype.createElement;
 
 export type ElementType<T extends Element = Element> = (new (
-  ...args: any[]
+  element: HTMLElement,
 ) => T) & {
-  readonly tag?: string;
-  readonly fields?: ElementFields<any>;
+  readonly tag: string;
   readonly replicated?: boolean;
-  readonly scriptMethods?: readonly string[];
-  readonly scriptProperties?: readonly string[];
-  readonly readonlyScriptProperties?: readonly string[];
 };
 
-export interface ScriptBindings {
-  methods: readonly string[];
-  properties: readonly string[];
-  readonlyProperties: readonly string[];
+let activeElementRegistry: ElementRegistry | null = null;
+
+export function setActiveElementRegistry(
+  registry: ElementRegistry | null,
+): void {
+  activeElementRegistry = registry;
+}
+
+export function resolveElementTypeForElement(
+  element: HTMLElement,
+): ElementType | undefined {
+  return activeElementRegistry?.getTypeForElement(element);
+}
+
+export function createElementHelper(element: HTMLElement): object | null {
+  return activeElementRegistry?.createHelper(element) ?? null;
 }
 
 export class ElementRegistry {
   readonly #typesByTag = new Map<string, ElementType>();
+  readonly #helpersByElement = new WeakMap<HTMLElement, Element>();
 
   register(...types: ElementType[]): void {
     for (const type of types) {
@@ -48,83 +49,89 @@ export class ElementRegistry {
     }
   }
 
-  create(snapshot: ElementSnapshot): Element {
-    const type = this.#requireType(snapshot.tag);
-    const element = new (type as unknown as new () => Element)();
+  hasTag(tag: string): boolean {
+    return this.#typesByTag.has(tag);
+  }
 
-    this.#syncElement(element, type, snapshot);
+  getTypeForElement(element: HTMLElement): ElementType | undefined {
+    return this.#typesByTag.get(element.tagName.toLowerCase());
+  }
+
+  createHelper(element: HTMLElement): Element | null {
+    const cached = this.#helpersByElement.get(element);
+
+    if (cached !== undefined) {
+      return cached;
+    }
+
+    const type = this.getTypeForElement(element);
+
+    if (type === undefined) {
+      return null;
+    }
+
+    const helper = new type(element);
+
+    this.#helpersByElement.set(element, helper);
+    return helper;
+  }
+
+  create(snapshot: ElementSnapshot): HTMLElement {
+    const element = nativeCreateElement.call(
+      document,
+      normalizeTag(snapshot.tag),
+    );
+
+    this.#syncElement(element, snapshot);
     return element;
   }
 
-  getSnapshot(element: Element): ElementSnapshot {
-    const type = getElementType(element);
-    const tag = this.#requireTag(type);
+  getSnapshot(element: HTMLElement): ElementSnapshot {
     const snapshot: ElementSnapshot = {
-      tag,
-      id: element.id,
-      class: [...element.classes],
-      children: element.children
-        .filter((child) => this.#isReplicated(child))
+      tag: normalizeTag(element.tagName),
+      attributes: getAttributesSnapshot(element),
+      text: getTextSnapshot(element),
+      children: Array.from(element.children)
+        .filter(
+          (child): child is HTMLElement =>
+            child instanceof HTMLElement && this.#isReplicated(child),
+        )
         .map((child) => this.getSnapshot(child)),
     };
-
-    this.#forEachField(type, (key, field) => {
-      snapshot[key] =
-        field.get?.(element as never) ?? Reflect.get(element, key, element);
-    });
 
     return snapshot;
   }
 
-  applySnapshot(element: Element, snapshot: ElementSnapshot): void {
-    const type = getElementType(element);
-
-    if (this.#requireTag(type) !== snapshot.tag) {
+  applySnapshot(element: HTMLElement, snapshot: ElementSnapshot): void {
+    if (normalizeTag(element.tagName) !== normalizeTag(snapshot.tag)) {
       throw new Error(
-        `Cannot apply <${snapshot.tag}> snapshot to ${element.constructor.name}.`,
+        `Cannot apply <${snapshot.tag}> snapshot to <${element.tagName}>.`,
       );
     }
 
-    this.#syncElement(element, type, snapshot);
+    this.#syncElement(element, snapshot);
   }
 
-  getScriptBindings(element: Element): ScriptBindings {
-    const methods = new Set<string>();
-    const properties = new Set<string>();
-    const readonlyProperties = new Set<string>();
-
-    for (const type of getElementTypeChain(getElementType(element))) {
-      if (Object.hasOwn(type, "scriptMethods")) {
-        for (const method of type.scriptMethods ?? []) {
-          methods.add(method);
-        }
-      }
-
-      if (Object.hasOwn(type, "scriptProperties")) {
-        for (const property of type.scriptProperties ?? []) {
-          properties.add(property);
-          readonlyProperties.delete(property);
-        }
-      }
-
-      if (Object.hasOwn(type, "readonlyScriptProperties")) {
-        for (const property of type.readonlyScriptProperties ?? []) {
-          properties.delete(property);
-          readonlyProperties.add(property);
-        }
-      }
-    }
-
+  getGameSnapshot(): ElementSnapshot {
     return {
-      methods: [...methods],
-      properties: [...properties],
-      readonlyProperties: [...readonlyProperties],
+      tag: "game",
+      children: Array.from(document.body.children)
+        .filter(
+          (child): child is HTMLElement =>
+            child instanceof HTMLElement && this.#isReplicated(child),
+        )
+        .map((child) => this.getSnapshot(child)),
     };
   }
 
-  #syncChildren(parent: Element, snapshots: ElementSnapshot[]): void {
-    const children = parent.children.filter((child) =>
-      this.#isReplicated(child),
+  loadGameSnapshot(snapshot: ElementSnapshot): void {
+    this.#syncChildren(document.body, snapshot.children ?? []);
+  }
+
+  #syncChildren(parent: HTMLElement, snapshots: ElementSnapshot[]): void {
+    const children = Array.from(parent.children).filter(
+      (child): child is HTMLElement =>
+        child instanceof HTMLElement && this.#isReplicated(child),
     );
 
     for (let index = 0; index < snapshots.length; index += 1) {
@@ -136,17 +143,15 @@ export class ElementRegistry {
         continue;
       }
 
-      const childType = getElementType(child);
-
-      if (this.#requireTag(childType) !== snapshot.tag) {
+      if (normalizeTag(child.tagName) !== normalizeTag(snapshot.tag)) {
         const replacement = this.create(snapshot);
 
-        parent.moveBefore(replacement, child);
+        child.before(replacement);
         child.remove();
         continue;
       }
 
-      this.#syncElement(child, childType, snapshot);
+      this.#syncElement(child, snapshot);
     }
 
     for (let index = snapshots.length; index < children.length; index += 1) {
@@ -154,56 +159,29 @@ export class ElementRegistry {
     }
   }
 
-  #syncElement(
-    element: Element,
-    type: ElementType,
-    snapshot: ElementSnapshot,
-  ): void {
-    element.id = snapshot.id ?? null;
-    element.classes = snapshot.class ?? [];
-
-    this.#forEachField(type, (key, field) => {
-      if (key in snapshot) {
-        field.set(element as never, snapshot[key] as never);
-      }
-    });
+  #syncElement(element: HTMLElement, snapshot: ElementSnapshot): void {
+    setAttributesFromSnapshot(element, snapshot.attributes);
+    ensureInertScriptType(element);
+    setTextFromSnapshot(element, snapshot.text);
 
     this.#syncChildren(element, snapshot.children ?? []);
   }
 
-  #isReplicated(element: Element): boolean {
-    const type = getElementType(element);
+  #isReplicated(element: HTMLElement): boolean {
+    if (element.closest("[data-no-replicate]") !== null) {
+      return false;
+    }
 
-    this.#requireTag(type);
+    const type = this.getTypeForElement(element);
+
+    if (type === undefined) {
+      return true;
+    }
+
     return type.replicated !== false;
   }
 
-  #forEachField(
-    type: ElementType,
-    callback: (key: string, field: ElementField) => void,
-  ): void {
-    for (const current of getElementTypeChain(type)) {
-      if (!Object.hasOwn(current, "fields")) {
-        continue;
-      }
-
-      for (const [key, field] of Object.entries(current.fields ?? {})) {
-        callback(key, field);
-      }
-    }
-  }
-
-  #requireTag(type: ElementType): string {
-    const tag = getOwnTag(type);
-
-    if (tag !== undefined && this.#typesByTag.get(tag) === type) {
-      return tag;
-    }
-
-    throw new Error(`Element class "${type.name}" is not registered.`);
-  }
-
-  #requireType(tag: string): ElementType {
+  requireType(tag: string): ElementType {
     const type = this.#typesByTag.get(tag);
 
     if (type === undefined) {
@@ -218,21 +196,75 @@ function getOwnTag(type: ElementType): string | undefined {
   return Object.hasOwn(type, "tag") ? type.tag : undefined;
 }
 
-function getElementType(value: object): ElementType {
-  return (Object.getPrototypeOf(value) as { constructor: ElementType })
-    .constructor;
+function normalizeTag(tag: string): string {
+  return tag.toLowerCase();
 }
 
-function getElementTypeChain(type: ElementType): ElementType[] {
-  const types: ElementType[] = [];
+function getAttributesSnapshot(element: HTMLElement): Record<string, string> {
+  const attributes: Record<string, string> = {};
 
-  for (
-    let current: object | null = type;
-    current !== null && current !== Function.prototype;
-    current = Object.getPrototypeOf(current)
-  ) {
-    types.unshift(current as ElementType);
+  for (const attribute of Array.from(element.attributes)) {
+    attributes[attribute.name] = attribute.value;
   }
 
-  return types;
+  return attributes;
+}
+
+function getTextSnapshot(element: HTMLElement): string | undefined {
+  let text = "";
+
+  for (const node of Array.from(element.childNodes)) {
+    if (node.nodeType === Node.TEXT_NODE) {
+      text += node.nodeValue ?? "";
+    }
+  }
+
+  return text === "" ? undefined : text;
+}
+
+function setAttributesFromSnapshot(
+  element: HTMLElement,
+  attributes: Record<string, string> | undefined,
+): void {
+  const nextEntries = Object.entries(attributes ?? {});
+  const nextNames = new Set(nextEntries.map(([name]) => name));
+
+  for (const attribute of Array.from(element.attributes)) {
+    if (!nextNames.has(attribute.name)) {
+      element.removeAttribute(attribute.name);
+    }
+  }
+
+  for (const [name, value] of nextEntries) {
+    element.setAttribute(name, value);
+  }
+}
+
+function setTextFromSnapshot(
+  element: HTMLElement,
+  text: string | undefined,
+): void {
+  for (const node of Array.from(element.childNodes)) {
+    if (node.nodeType === Node.TEXT_NODE) {
+      node.remove();
+    }
+  }
+
+  if (text === undefined) {
+    return;
+  }
+
+  element.prepend(document.createTextNode(text));
+}
+
+function ensureInertScriptType(element: HTMLElement): void {
+  if (normalizeTag(element.tagName) !== "script") {
+    return;
+  }
+
+  // prevent scripts from getting reexecuted during snapshot application
+  // todo: really need a better solution for this
+  if (element.getAttribute("type") === null) {
+    element.setAttribute("type", "application/webgames-script");
+  }
 }

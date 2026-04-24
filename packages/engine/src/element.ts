@@ -1,156 +1,114 @@
-import { selectElement, selectElements } from "./query";
+import { resolveElementTypeForElement, ElementType } from "./element-registry";
 
+// Registerable helper class for elements.
+// When a subclass is registered with a `static readonly tag: string`,
+// The fields and methods of the class become available on any HTMLElement with the matching tag name.
+// At runtime, the HTMLElement is wrapped in a Proxy that forwards property accesses,
+// creating a cached instance of the class on demand.
+// Attributes on the underlying HTMLElement will be replicated, but properties of this helper are not replicated.
 export class Element {
-  static readonly tag: string = "element";
-  static readonly scriptProperties: readonly string[] = ["id", "classes"];
-  static readonly readonlyScriptProperties: readonly string[] = [
-    "parent",
-    "children",
-    "childElementCount",
-    "firstElementChild",
-    "lastElementChild",
-  ];
-  static readonly scriptMethods: readonly string[] = [
-    "remove",
-    "querySelector",
-    "querySelectorAll",
-  ];
+  readonly element: HTMLElement;
 
-  #id: string | null;
-  #classes: string[];
-  #parent: Element | null;
-  #children: Element[];
-
-  constructor() {
-    this.#id = null;
-    this.#classes = [];
-    this.#parent = null;
-    this.#children = [];
-  }
-
-  get id(): string | null {
-    return this.#id;
-  }
-
-  set id(value: string | null) {
-    this.#id = value;
+  constructor(element: HTMLElement) {
+    this.element = element;
   }
 
   get classes(): readonly string[] {
-    return this.#classes;
+    return Array.from(this.element.classList);
   }
 
   set classes(value: readonly string[]) {
-    this.#classes = [...value];
+    this.element.className = value.join(" ");
+  }
+
+  get id(): string {
+    return this.element.id;
+  }
+
+  set id(value: string) {
+    this.element.id = value;
   }
 
   get parent(): Element | null {
-    return this.#parent;
+    const parent = this.element.parentElement;
+
+    if (parent !== null && parent instanceof Element) {
+      return parent;
+    }
+
+    return null;
   }
 
-  set parent(value: Element | null) {
-    this.#parent = value;
+  getAttribute(name: string): string | null {
+    return this.element.getAttribute(name);
   }
 
-  get children(): readonly Element[] {
-    return this.#children;
+  setAttribute(name: string, value: string): void {
+    this.element.setAttribute(name, value);
   }
 
-  get childElementCount(): number {
-    return this.#children.length;
+  hasAttribute(name: string): boolean {
+    return this.element.hasAttribute(name);
   }
 
-  get firstElementChild(): Element | null {
-    return this.#children[0] ?? null;
+  removeAttribute(name: string): void {
+    this.element.removeAttribute(name);
   }
 
-  get lastElementChild(): Element | null {
-    return this.#children[this.#children.length - 1] ?? null;
-  }
-
-  append(...elements: Element[]): void {
-    for (const element of elements) {
-      this.moveBefore(element, null);
+  protected ensureAttribute(name: string, value: string): void {
+    if (!this.element.hasAttribute(name)) {
+      this.element.setAttribute(name, value);
     }
   }
 
-  prepend(...elements: Element[]): void {
-    const reference = this.firstElementChild;
+  protected getNumberAttribute(name: string, fallback: number): number {
+    const value = this.element.getAttribute(name);
 
-    for (const element of elements) {
-      this.moveBefore(element, reference);
+    if (value === null) {
+      return fallback;
     }
+
+    const parsed = parseFloat(value);
+
+    if (Number.isNaN(parsed)) {
+      return fallback;
+    }
+
+    return parsed;
   }
 
-  moveBefore(element: Element, child: Element | null): void {
-    if (child !== null && child.parent !== this) {
-      throw new Error("The reference element must be a child of this element.");
-    }
-
-    if (element === child) {
-      return;
-    }
-
-    this.#assertCanAdopt(element);
-    element.parent?.removeChild(element);
-    element.parent = this;
-
-    if (child === null) {
-      this.#children.push(element);
-      return;
-    }
-
-    const index = this.#children.indexOf(child);
-
-    if (index === -1) {
-      throw new Error("Element child links are out of sync.");
-    }
-
-    this.#children.splice(index, 0, element);
+  protected setNumberAttribute(name: string, value: number): void {
+    this.element.setAttribute(name, String(value));
   }
 
-  replaceChildren(...elements: Element[]): void {
-    while (this.#children.length > 0) {
-      this.removeChild(this.#children[0]);
+  protected getStringAttribute(name: string, fallback = ""): string {
+    return this.element.getAttribute(name) ?? fallback;
+  }
+
+  protected setStringAttribute(name: string, value: string): void {
+    this.element.setAttribute(name, value);
+  }
+
+  isElementType(type: ElementType): boolean {
+    // we can no longer use instanceof on an ElementType, so we check the tag name instead
+    return this.element.tagName.toLowerCase() === type.tag;
+  }
+
+  static [Symbol.hasInstance](value: unknown): boolean {
+    if (!(value instanceof HTMLElement)) {
+      return false;
     }
 
-    this.append(...elements);
-  }
+    const type = resolveElementTypeForElement(value);
 
-  removeChild(element: Element): void {
-    const index = this.#children.indexOf(element);
-
-    if (index === -1) {
-      throw new Error("Element child links are out of sync.");
+    if (type === undefined) {
+      return false;
     }
 
-    this.#children.splice(index, 1);
-    element.parent = null;
-  }
+    const expectedType = this as unknown as { prototype: object };
 
-  remove(): void {
-    this.#parent?.removeChild(this);
-  }
-
-  querySelector<T extends Element = Element>(selector: string): T | null {
-    return selectElement<T>(this, selector);
-  }
-
-  querySelectorAll<T extends Element = Element>(selector: string): T[] {
-    return selectElements<T>(this, selector);
-  }
-
-  #assertCanAdopt(element: Element): void {
-    for (
-      let current: Element | null = this;
-      current !== null;
-      current = current.parent
-    ) {
-      if (current === element) {
-        throw new Error(
-          "An element cannot be parented to itself or one of its children.",
-        );
-      }
-    }
+    return expectedType.prototype.isPrototypeOf(type.prototype);
   }
 }
+
+export interface Element extends HTMLElement {}

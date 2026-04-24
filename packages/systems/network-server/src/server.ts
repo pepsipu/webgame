@@ -1,103 +1,99 @@
-import type { Server as HttpServer } from "node:http";
 import type { ElementRegistry } from "@webgames/engine";
 import { Element } from "@webgames/engine";
-import { WebSocket, WebSocketServer } from "ws";
 
-type ClientNetworkEvent = {
+type ServerNetworkEvent = {
   name: string;
   data: unknown;
+  clientId: string;
 };
 
-type ServerNetworkEvent = ClientNetworkEvent & {
-  clientId: string;
+type RelayMessage =
+  | {
+      type: "message";
+      clientId: string;
+      data: unknown;
+    }
+  | {
+      type: "connect" | "disconnect";
+      clientId: string;
+    };
+
+type RelayEventData = {
+  name: string;
+  data: unknown;
 };
 
 export class ServerNetworkServiceElement extends Element {
   static readonly tag: string = "network";
   static readonly replicated: boolean = false;
-  static readonly scriptMethods: readonly string[] = ["pollEvent"];
+  readonly #socket: WebSocket;
+  readonly #incomingEvents: ServerNetworkEvent[] = [];
 
-  clients: Set<WebSocket>;
-  readonly #incomingEvents: ServerNetworkEvent[];
-  #socketServer: WebSocketServer | null;
-
-  constructor() {
-    super();
-    this.clients = new Set();
-    this.#incomingEvents = [];
-    this.#socketServer = null;
-  }
-
-  attach(server: HttpServer, registry: ElementRegistry, root: Element): void {
-    this.#socketServer = this.#createSocketServer(server, registry, root);
+  constructor(element: HTMLElement) {
+    super(element);
+    this.#socket = this.#connect();
   }
 
   pollEvent(): ServerNetworkEvent | undefined {
     return this.#incomingEvents.shift();
   }
 
-  broadcastSnapshot(registry: ElementRegistry, root: Element): void {
-    const snapshot = JSON.stringify(registry.getSnapshot(root));
-
-    for (const socket of this.clients.values()) {
-      socket.send(snapshot);
+  broadcastSnapshot(registry: ElementRegistry): void {
+    if (this.#socket.readyState === WebSocket.OPEN) {
+      this.#socket.send(JSON.stringify(registry.getGameSnapshot()));
     }
   }
 
   destroy(): void {
-    for (const socket of this.clients) {
-      socket.close();
-    }
-
-    this.clients.clear();
-    this.#socketServer?.close();
-    this.#socketServer = null;
+    this.#socket.close();
   }
 
-  #createSocketServer(
-    server: HttpServer,
-    registry: ElementRegistry,
-    root: Element,
-  ): WebSocketServer {
-    const socketServer = new WebSocketServer({
-      server,
-      path: "/ws",
-    });
+  #connect(): WebSocket {
+    const protocol = location.protocol === "https:" ? "wss:" : "ws:";
+    const socket = new WebSocket(`${protocol}//${location.host}/ws?role=host`);
 
-    socketServer.on("connection", (socket) => {
-      this.#connectClient(registry, root, socket);
-    });
+    socket.addEventListener("message", (event) => {
+      const message = JSON.parse(String(event.data)) as RelayMessage;
 
-    return socketServer;
-  }
+      if (message.type === "message") {
+        const relayEvent = this.#parseRelayEventData(message.data);
 
-  #connectClient(
-    registry: ElementRegistry,
-    root: Element,
-    socket: WebSocket,
-  ): void {
-    const clientId = crypto.randomUUID();
+        if (relayEvent === null) {
+          return;
+        }
 
-    this.clients.add(socket);
-    socket.send(JSON.stringify(registry.getSnapshot(root)));
-
-    socket.on("message", (data) => {
-      const event = JSON.parse(data.toString()) as ClientNetworkEvent;
+        this.#incomingEvents.push({
+          clientId: message.clientId,
+          name: relayEvent.name,
+          data: relayEvent.data,
+        });
+        return;
+      }
 
       this.#incomingEvents.push({
-        clientId,
-        name: event.name,
-        data: event.data,
-      });
-    });
-
-    socket.on("close", () => {
-      this.clients.delete(socket);
-      this.#incomingEvents.push({
-        clientId,
-        name: "disconnect",
+        clientId: message.clientId,
+        name: message.type,
         data: null,
       });
     });
+
+    return socket;
+  }
+
+  #parseRelayEventData(data: unknown): RelayEventData | null {
+    if (typeof data !== "object" || data === null) {
+      return null;
+    }
+
+    const relayEvent = data as Partial<RelayEventData>;
+
+    if (typeof relayEvent.name !== "string") {
+      return null;
+    }
+
+    return {
+      name: relayEvent.name,
+      data: relayEvent.data,
+    };
   }
 }

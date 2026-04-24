@@ -1,45 +1,30 @@
-import type { UiDomNode } from "../dom-node";
 import { UiElement } from "./base";
 
 export class ButtonElement extends UiElement {
   static readonly tag: string = "button";
-  static readonly scriptMethods: readonly string[] = ["wasClicked"];
+  #clicked = false;
 
-  #clicked: boolean;
+  constructor(element: HTMLElement) {
+    super(element);
 
-  constructor() {
-    super("button");
-    this.#clicked = false;
+    this.element.addEventListener("click", () => {
+      this.#clicked = true;
+    });
   }
 
-  markClicked(): void {
-    this.#clicked = true;
+  get clicked(): boolean {
+    return this.#clicked;
+  }
+
+  set clicked(value: boolean) {
+    this.#clicked = value;
   }
 
   override clearFrame(): void {
-    this.#clicked = false;
+    this.clicked = false;
   }
 
   wasClicked(): boolean {
     return this.#clicked;
-  }
-
-  override createDomNode(): UiDomNode {
-    const button = document.createElement("button");
-    const onClick = (): void => {
-      this.markClicked();
-    };
-
-    button.type = "button";
-    button.dataset.webgamesUi = this.uiType;
-    button.addEventListener("click", onClick);
-
-    return {
-      element: button,
-      destroy() {
-        button.removeEventListener("click", onClick);
-        button.remove();
-      },
-    };
   }
 }

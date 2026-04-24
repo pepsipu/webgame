@@ -1,5 +1,13 @@
-import { type Element, selectElement, selectElements } from "@webgames/engine";
-import { CameraElement, ShapeElement, Transform } from "@webgames/game";
+import { type Element } from "@webgames/engine";
+import {
+  BallElement,
+  BoxElement,
+  CameraElement,
+  ShapeElement,
+  shapeElements,
+  Transform,
+  TubeElement,
+} from "@webgames/game";
 import { createDrawState, type DrawState, setDrawState } from "./draw-state";
 import {
   createElementGpuResources,
@@ -166,11 +174,8 @@ export class Renderer {
     this.#cameraBuffer.destroy();
   }
 
-  render(document: Element): void {
-    const camera = selectElement(
-      document,
-      (element): element is CameraElement => element instanceof CameraElement,
-    );
+  render(): void {
+    const camera = document.querySelector<CameraElement>("camera");
 
     if (camera === null) {
       return;
@@ -200,12 +205,15 @@ export class Renderer {
     renderPass.setPipeline(this.#pipeline);
     renderPass.setBindGroup(0, this.#cameraBindGroup);
 
-    for (const element of selectElements(
-      document,
-      (node): node is ShapeElement => node instanceof ShapeElement,
-    )) {
-      liveElements.add(element);
-      this.#drawShapeElement(renderPass, element);
+    // todo: ugly solution for querying all shape elements
+    // need a way to get list of all shape elements without this tight binding
+    for (const type of shapeElements) {
+      for (const element of Array.from(
+        document.querySelectorAll(type.tag) as NodeListOf<ShapeElement>,
+      )) {
+        liveElements.add(element);
+        this.#drawShapeElement(renderPass, element);
+      }
     }
 
     renderPass.end();

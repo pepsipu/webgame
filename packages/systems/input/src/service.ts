@@ -1,62 +1,49 @@
 import { Element } from "@webgames/engine";
 
 export class InputServiceElement extends Element {
-  static readonly tag: string = "input";
+  static readonly tag: string = "input-service";
   static readonly replicated: boolean = false;
-  static readonly scriptMethods: readonly string[] = [
-    "isDown",
-    "wasPressed",
-    "wasReleased",
-  ];
-
-  down: Set<string>;
-  pressed: Set<string>;
-  released: Set<string>;
-
-  constructor() {
-    super();
-    this.down = new Set();
-    this.pressed = new Set();
-    this.released = new Set();
-  }
+  readonly #down = new Set<string>();
+  readonly #pressed = new Set<string>();
+  readonly #released = new Set<string>();
 
   isDown(code: string): boolean {
-    return this.down.has(code);
+    return this.#down.has(code);
   }
 
   wasPressed(code: string): boolean {
-    return this.pressed.has(code);
+    return this.#pressed.has(code);
   }
 
   wasReleased(code: string): boolean {
-    return this.released.has(code);
+    return this.#released.has(code);
   }
 
   pressKey(code: string): void {
-    if (this.down.has(code)) {
+    if (this.#down.has(code)) {
       return;
     }
 
-    this.down.add(code);
-    this.pressed.add(code);
+    this.#down.add(code);
+    this.#pressed.add(code);
   }
 
   releaseKey(code: string): void {
-    if (!this.down.has(code)) {
+    if (!this.#down.has(code)) {
       return;
     }
 
-    this.down.delete(code);
-    this.released.add(code);
+    this.#down.delete(code);
+    this.#released.add(code);
   }
 
   clearFrame(): void {
-    this.pressed.clear();
-    this.released.clear();
+    this.#pressed.clear();
+    this.#released.clear();
   }
 
   reset(): void {
-    this.down.clear();
+    this.#down.clear();
     this.clearFrame();
   }
 }

@@ -6,11 +6,6 @@
     ".": "./src/index.ts"
   },
   "dependencies": {
-    "@webgames/engine": "workspace:*",
-    "ws": "^8.19.0"
-  },
-  "devDependencies": {
-    "@types/node": "^24.12.0",
-    "@types/ws": "^8.18.1"
+    "@webgames/engine": "workspace:*"
   }
 }

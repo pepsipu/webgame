@@ -4,8 +4,7 @@ import { inputSystem } from "@webgames/input";
 import { clientNetworkSystem } from "@webgames/network-client";
 import { createRendererSystem } from "@webgames/renderer";
 import { ScriptSystem } from "@webgames/script";
-import { createUiSystem } from "@webgames/ui";
-import { createEditor } from "./editor";
+import { uiSystem } from "@webgames/ui";
 
 const app = document.querySelector<HTMLDivElement>("#app");
 
@@ -13,15 +12,12 @@ if (app === null) {
   throw new Error("App element not found");
 }
 
-const editor = createEditor();
+app.setAttribute("data-no-replicate", "");
 
 const canvas = document.createElement("canvas");
 canvas.id = "canvas";
 
-const uiOverlay = document.createElement("div");
-uiOverlay.id = "ui-overlay";
-
-app.append(editor, canvas, uiOverlay);
+app.append(canvas);
 
 initializeCanvasSize(canvas);
 
@@ -30,7 +26,7 @@ const engine = new Engine([
   inputSystem,
   clientNetworkSystem,
   new ScriptSystem(),
-  createUiSystem(uiOverlay),
+  uiSystem,
   await createRendererSystem(canvas),
 ]);
 
